@@ -3,20 +3,20 @@ import math
 from pathlib import Path
 import torch
 from torch.nn import functional as F
-from behavior2weights.probes.active import training_population_order
+from behavior2weights.probes.active import trainingpopulationorder
 from behavior2weights.schemas import ResultRecord,Split
-from behavior2weights.traces.store import load_trace_bundle
-from behavior2weights.train.property import TracePropertyCorpus,load_property_checkpoint
-from behavior2weights.utils import stable_hash,write_jsonl
-from behavior2weights.zoo.manifest import load_manifest
+from behavior2weights.traces.store import loadtracebundle
+from behavior2weights.train.property import TracePropertyCorpus,loadpropertycheckpoint
+from behavior2weights.utils import stablehash,writejsonl
+from behavior2weights.zoo.manifest import loadmanifest
 @torch.no_grad()
-def evaluate_property_classifier(*,manifest_path:str|Path,traces_directory:str|Path,checkpoint_directory:str|Path,output_path:str|Path,query_budgets:tuple[int,...]=(16,32,64),query_policies:tuple[str,...]=("random","population_disagreement"),splits:tuple[Split,...]=(Split.TEST,Split.OOD),tier:str="tier2",run_id:str="property-evaluation",replicate:int=0,seed:int=20260621,device:str="cpu",)->list[ResultRecord]:
-    records=load_manifest(manifest_path,resolve_paths=False)
-    traces=load_trace_bundle(traces_directory)
-    model,vocabulary=load_property_checkpoint(checkpoint_directory,device=device)
+def evaluatepropertyclassifier(*,manifest_path:str|Path,traces_directory:str|Path,checkpoint_directory:str|Path,output_path:str|Path,query_budgets:tuple[int,...]=(16,32,64),query_policies:tuple[str,...]=("random","population_disagreement"),splits:tuple[Split,...]=(Split.TEST,Split.OOD),tier:str="tier2",run_id:str="property-evaluation",replicate:int=0,seed:int=20260621,device:str="cpu",)->list[ResultRecord]:
+    records=loadmanifest(manifest_path,resolve_paths=False)
+    traces=loadtracebundle(traces_directory)
+    model,vocabulary=loadpropertycheckpoint(checkpoint_directory,device=device)
     properties=tuple(vocabulary.values)
     corpus=TracePropertyCorpus(records,traces,properties=properties,vocabulary=vocabulary)
-    indices=[index for split in splits for index in corpus.indices_for_split(split)]
+    indices=[index for split in splits for index in corpus.indicesforsplit(split)]
     if not indices:
         raise ValueError("no targets in requested evaluation splits")
     budgets=tuple(sorted(set(query_budgets)))
@@ -25,17 +25,17 @@ def evaluate_property_classifier(*,manifest_path:str|Path,traces_directory:str|P
     policies=tuple(dict.fromkeys(query_policies))
     if not policies:
         raise ValueError("query_policies cannot be empty")
-    train_indices=corpus.indices_for_split(Split.TRAIN)
+    train_indices=corpus.indicesforsplit(Split.TRAIN)
     training_rows=corpus.trace_indices[torch.tensor(train_indices)]
     training_lineages=[corpus.records[index].lineage_id for index in train_indices]
-    policy_orders={policy:training_population_order(traces.observations[training_rows],training_lineages,policy=policy,seed=seed+policy_index*1_000_003,).indices for policy_index,policy in enumerate(policies)}
+    policy_orders={policy:trainingpopulationorder(traces.observations[training_rows],training_lineages,policy=policy,seed=seed+policy_index*1_000_003,).indices for policy_index,policy in enumerate(policies)}
     model.eval()
     output:list[ResultRecord]=[]
     for query_policy in policies:
         order=policy_orders[query_policy]
         for budget in budgets:
             queries=order[:budget]
-            query_hash=stable_hash(queries.tolist(),length=32)
+            query_hash=stablehash(queries.tolist(),length=32)
             batch=corpus.batch(indices,query_indices=queries)
             logits=model(batch["input_ids"].to(device),batch["observations"].to(device),batch["channel_ids"].to(device),query_mask=batch["query_mask"].to(device),)
             for name,values in logits.items():
@@ -51,5 +51,5 @@ def evaluate_property_classifier(*,manifest_path:str|Path,traces_directory:str|P
                     metrics={f"property_{name}_accuracy":float(predictions[row]==labels[row]),f"property_{name}_nll":float(losses[row]),f"property_{name}_confidence":float(probabilities[row].max()),f"property_{name}_entropy":float(entropy/entropy_denominator if entropy_denominator>0 else 0.0),}
                     for metric,value in metrics.items():
                         output.append(ResultRecord(run_id=run_id,target_id=record.target_id,lineage_id=record.lineage_id,split=record.split or Split.TEST,tier=tier,method="trace_property_classifier",channel=traces.channel,query_policy=query_policy,query_budget=budget,replicate=replicate,metric=metric,value=value,metadata=metadata,))
-    write_jsonl(output_path,[row.model_dump(mode="json")for row in output])
+    writejsonl(output_path,[row.model_dump(mode="json")for row in output])
     return output

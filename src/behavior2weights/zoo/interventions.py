@@ -5,7 +5,7 @@ from collections.abc import Mapping
 from typing import Literal
 import torch
 from torch import Tensor
-from behavior2weights.models.micro_transformer import MicroTransformerConfig
+from behavior2weights.models.microtransformer import MicroTransformerConfig
 from behavior2weights.schemas import InterventionRecord
 InterventionKind=Literal["attention_head_ablation","mlp_neuron_ablation","lora_edit","sparse_weight_edit",]
 @dataclasses.dataclass(frozen=True,slots=True)
@@ -14,16 +14,16 @@ class InterventionResult:
     record:InterventionRecord
     changed_tensors:tuple[str,...]
     changed_entries:int
-def _clone_state(state_dict:Mapping[str,Tensor])->OrderedDict[str,Tensor]:
+def clonestate(state_dict:Mapping[str,Tensor])->OrderedDict[str,Tensor]:
     return OrderedDict((name,value.detach().clone())for name,value in state_dict.items())
-def ablate_attention_head(state_dict:Mapping[str,Tensor],config:MicroTransformerConfig,*,layer:int,head:int,)->InterventionResult:
+def ablateattentionhead(state_dict:Mapping[str,Tensor],config:MicroTransformerConfig,*,layer:int,head:int,)->InterventionResult:
     if not 0<=layer<config.n_layers:
         raise ValueError(f"layer must be in [0, {config.n_layers})")
     if not 0<=head<config.n_heads:
         raise ValueError(f"head must be in [0, {config.n_heads})")
-    result=_clone_state(state_dict)
-    start=head*config.head_dim
-    end=(head+1)*config.head_dim
+    result=clonestate(state_dict)
+    start=head*config.headdim
+    end=(head+1)*config.headdim
     prefix=f"blocks.{layer}.attn"
     changed:list[str]=[]
     entries=0
@@ -41,13 +41,13 @@ def ablate_attention_head(state_dict:Mapping[str,Tensor],config:MicroTransformer
     result[output_name][:,start:end]=0
     changed.append(output_name)
     entries+=result[output_name][:,start:end].numel()
-    return InterventionResult(state_dict=result,record=InterventionRecord(kind="attention_head_ablation",label=f"L{layer}.H{head}",layer=layer,head=head,metadata={"head_dim":config.head_dim},),changed_tensors=tuple(changed),changed_entries=entries,)
-def ablate_mlp_neuron(state_dict:Mapping[str,Tensor],config:MicroTransformerConfig,*,layer:int,neuron:int,)->InterventionResult:
+    return InterventionResult(state_dict=result,record=InterventionRecord(kind="attention_head_ablation",label=f"L{layer}.H{head}",layer=layer,head=head,metadata={"head_dim":config.headdim},),changed_tensors=tuple(changed),changed_entries=entries,)
+def ablatemlpneuron(state_dict:Mapping[str,Tensor],config:MicroTransformerConfig,*,layer:int,neuron:int,)->InterventionResult:
     if not 0<=layer<config.n_layers:
         raise ValueError(f"layer must be in [0, {config.n_layers})")
     if not 0<=neuron<config.d_ff:
         raise ValueError(f"neuron must be in [0, {config.d_ff})")
-    result=_clone_state(state_dict)
+    result=clonestate(state_dict)
     prefix=f"blocks.{layer}.mlp"
     fc1_weight=f"{prefix}.fc1.weight"
     fc1_bias=f"{prefix}.fc1.bias"
@@ -61,8 +61,8 @@ def ablate_mlp_neuron(state_dict:Mapping[str,Tensor],config:MicroTransformerConf
         changed.append(fc1_bias)
         entries+=1
     return InterventionResult(state_dict=result,record=InterventionRecord(kind="mlp_neuron_ablation",label=f"L{layer}.N{neuron}",layer=layer,neuron=neuron,),changed_tensors=tuple(changed),changed_entries=entries,)
-def apply_lora_edit(state_dict:Mapping[str,Tensor],*,tensor_name:str,rank:int,scale:float,seed:int,)->InterventionResult:
-    result=_clone_state(state_dict)
+def applyloraedit(state_dict:Mapping[str,Tensor],*,tensor_name:str,rank:int,scale:float,seed:int,)->InterventionResult:
+    result=clonestate(state_dict)
     if tensor_name not in result:
         raise KeyError(tensor_name)
     weight=result[tensor_name]
@@ -78,8 +78,8 @@ def apply_lora_edit(state_dict:Mapping[str,Tensor],*,tensor_name:str,rank:int,sc
     update=scale*(left@right)/rank**0.5
     result[tensor_name]=weight+update.to(weight.dtype)
     return InterventionResult(state_dict=result,record=InterventionRecord(kind="lora_edit",label=f"{tensor_name}:r{rank}:s{scale:g}",tensor_name=tensor_name,rank=rank,scale=scale,seed=seed,metadata={"update_frobenius_norm":float(update.norm().item())},),changed_tensors=(tensor_name,),changed_entries=weight.numel(),)
-def apply_sparse_weight_edit(state_dict:Mapping[str,Tensor],*,tensor_name:str,count:int,scale:float,seed:int,)->InterventionResult:
-    result=_clone_state(state_dict)
+def applysparseweightedit(state_dict:Mapping[str,Tensor],*,tensor_name:str,count:int,scale:float,seed:int,)->InterventionResult:
+    result=clonestate(state_dict)
     if tensor_name not in result:
         raise KeyError(tensor_name)
     tensor=result[tensor_name]

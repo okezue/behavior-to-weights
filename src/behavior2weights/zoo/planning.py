@@ -3,7 +3,7 @@ import dataclasses
 from collections import Counter
 from collections.abc import Mapping,Sequence
 from typing import Any
-from behavior2weights.models.micro_transformer import MicroTransformerConfig
+from behavior2weights.models.microtransformer import MicroTransformerConfig
 from behavior2weights.schemas import Split
 from behavior2weights.zoo.manifest import SplitPolicy
 from behavior2weights.zoo.micro import MicroZooConfig
@@ -37,13 +37,13 @@ class ZooProjection:
     target_splits:dict[str,int]
     factor_cardinalities:dict[str,int]
     notes:tuple[str,...]=()
-    def as_dict(self)->dict[str,Any]:
+    def asdict(self)->dict[str,Any]:
         payload=dataclasses.asdict(self)
         payload["projected_raw_checkpoint_gib_fp32"]=self.projected_raw_checkpoint_bytes_fp32/(1024**3)
         for architecture in payload["architectures"]:
             architecture["projected_raw_checkpoint_gib_fp32"]=architecture["projected_raw_checkpoint_bytes_fp32"]/(1024**3)
         return payload
-def micro_parameter_count(config:MicroTransformerConfig)->int:
+def microparametercount(config:MicroTransformerConfig)->int:
     width=config.d_model
     embeddings=config.vocab_size*width+config.max_seq_len*width
     attention_weights=4*width*width
@@ -54,7 +54,7 @@ def micro_parameter_count(config:MicroTransformerConfig)->int:
     final_layer_norm=2*width
     output_projection=0 if config.tie_embeddings else config.vocab_size*width
     return embeddings+config.n_layers*per_block+final_layer_norm+output_projection
-def _split_counts(factor_rows:Sequence[Mapping[str,Any]],policy:SplitPolicy)->dict[str,int]:
+def splitcounts(factor_rows:Sequence[Mapping[str,Any]],policy:SplitPolicy)->dict[str,int]:
     ood=0
     in_distribution=0
     for factors in factor_rows:
@@ -74,13 +74,13 @@ def _split_counts(factor_rows:Sequence[Mapping[str,Any]],policy:SplitPolicy)->di
         test=max(0,test-overflow)
     train=in_distribution-validation-test
     return{Split.TRAIN.value:train,Split.VALIDATION.value:validation,Split.TEST.value:test,Split.OOD.value:ood,}
-def _factor_cardinalities(rows:Sequence[Mapping[str,Any]])->dict[str,int]:
+def factorcardinalities(rows:Sequence[Mapping[str,Any]])->dict[str,int]:
     values:dict[str,set[str]]={}
     for row in rows:
         for key,value in row.items():
             values.setdefault(key,set()).add(str(value))
     return{key:len(unique)for key,unique in sorted(values.items())}
-def plan_micro_zoo(config:MicroZooConfig,*,split_policy:SplitPolicy|None=None,name:str|None=None,)->ZooProjection:
+def planmicrozoo(config:MicroZooConfig,*,split_policy:SplitPolicy|None=None,name:str|None=None,)->ZooProjection:
     split_policy=split_policy or SplitPolicy()
     checkpoints_per_lineage=len(config.checkpoint_steps)
     interventions_per_lineage=sum(spec.count for spec in config.interventions)
@@ -89,7 +89,7 @@ def plan_micro_zoo(config:MicroZooConfig,*,split_policy:SplitPolicy|None=None,na
     factor_rows:list[dict[str,Any]]=[]
     lineages_per_architecture=(len(config.tasks)*len(config.model_seeds)*len(config.dataset_seeds)*len(config.optimizers))
     for architecture_index,architecture in enumerate(config.architectures):
-        parameter_count=micro_parameter_count(architecture)
+        parameter_count=microparametercount(architecture)
         lineages=lineages_per_architecture
         checkpoint_targets=lineages*checkpoints_per_lineage
         intervention_targets=lineages*interventions_per_lineage
@@ -100,10 +100,10 @@ def plan_micro_zoo(config:MicroZooConfig,*,split_policy:SplitPolicy|None=None,na
                 for dataset_seed in config.dataset_seeds:
                     for optimizer in config.optimizers:
                         factor_rows.append({"architecture_index":architecture_index,"d_model":architecture.d_model,"n_layers":architecture.n_layers,"n_heads":architecture.n_heads,"d_ff":architecture.d_ff,"task":task,"model_seed":model_seed,"dataset_seed":dataset_seed,"optimizer":optimizer.name,"learning_rate":optimizer.learning_rate,})
-    lineage_splits=_split_counts(factor_rows,split_policy)
+    lineage_splits=splitcounts(factor_rows,split_policy)
     target_splits={split:count*targets_per_lineage for split,count in lineage_splits.items()}
-    return ZooProjection(kind="micro",name=name,architectures=tuple(architecture_plans),lineages=len(factor_rows),checkpoint_targets=sum(item.checkpoint_targets for item in architecture_plans),intervention_targets=sum(item.intervention_targets for item in architecture_plans),targets=sum(item.total_targets for item in architecture_plans),checkpoints_per_lineage=checkpoints_per_lineage,interventions_per_lineage=interventions_per_lineage,targets_per_lineage=targets_per_lineage,projected_raw_checkpoint_bytes_fp32=sum(item.projected_raw_checkpoint_bytes_fp32 for item in architecture_plans),lineage_splits=lineage_splits,target_splits=target_splits,factor_cardinalities=_factor_cardinalities(factor_rows),notes=("Storage is the raw unique-parameter payload at FP32; optimizer state, manifests, " "safetensors headers, traces, and inverse-model artifacts are excluded.","Lineages, not checkpoints or interventions, are the independent statistical units.",),)
-def plan_text_zoo(config:TextZooConfig,*,split_policy:SplitPolicy|None=None,name:str|None=None,)->ZooProjection:
+    return ZooProjection(kind="micro",name=name,architectures=tuple(architecture_plans),lineages=len(factor_rows),checkpoint_targets=sum(item.checkpoint_targets for item in architecture_plans),intervention_targets=sum(item.intervention_targets for item in architecture_plans),targets=sum(item.total_targets for item in architecture_plans),checkpoints_per_lineage=checkpoints_per_lineage,interventions_per_lineage=interventions_per_lineage,targets_per_lineage=targets_per_lineage,projected_raw_checkpoint_bytes_fp32=sum(item.projected_raw_checkpoint_bytes_fp32 for item in architecture_plans),lineage_splits=lineage_splits,target_splits=target_splits,factor_cardinalities=factorcardinalities(factor_rows),notes=("Storage is the raw unique-parameter payload at FP32; optimizer state, manifests, " "safetensors headers, traces, and inverse-model artifacts are excluded.","Lineages, not checkpoints or interventions, are the independent statistical units.",),)
+def plantextzoo(config:TextZooConfig,*,split_policy:SplitPolicy|None=None,name:str|None=None,)->ZooProjection:
     split_policy=split_policy or SplitPolicy()
     checkpoints_per_lineage=len(config.checkpoint_steps)
     interventions_per_lineage=sum(spec.count for spec in config.interventions)
@@ -112,7 +112,7 @@ def plan_text_zoo(config:TextZooConfig,*,split_policy:SplitPolicy|None=None,name
     architecture_plans:list[ArchitectureProjection]=[]
     factor_rows:list[dict[str,Any]]=[]
     for architecture_index,architecture in enumerate(config.architectures):
-        parameter_count=micro_parameter_count(architecture)
+        parameter_count=microparametercount(architecture)
         lineages=lineages_per_architecture
         checkpoint_targets=lineages*checkpoints_per_lineage
         intervention_targets=lineages*interventions_per_lineage
@@ -122,10 +122,10 @@ def plan_text_zoo(config:TextZooConfig,*,split_policy:SplitPolicy|None=None,name
             for data_order_seed in config.data_order_seeds:
                 for optimizer in config.optimizers:
                     factor_rows.append({"architecture_index":architecture_index,"d_model":architecture.d_model,"n_layers":architecture.n_layers,"n_heads":architecture.n_heads,"d_ff":architecture.d_ff,"model_seed":model_seed,"data_order_seed":data_order_seed,"optimizer":optimizer.name,"learning_rate":optimizer.learning_rate,})
-    lineage_splits=_split_counts(factor_rows,split_policy)
+    lineage_splits=splitcounts(factor_rows,split_policy)
     target_splits={split:count*targets_per_lineage for split,count in lineage_splits.items()}
-    return ZooProjection(kind="text",name=name,architectures=tuple(architecture_plans),lineages=len(factor_rows),checkpoint_targets=sum(item.checkpoint_targets for item in architecture_plans),intervention_targets=sum(item.intervention_targets for item in architecture_plans),targets=sum(item.total_targets for item in architecture_plans),checkpoints_per_lineage=checkpoints_per_lineage,interventions_per_lineage=interventions_per_lineage,targets_per_lineage=targets_per_lineage,projected_raw_checkpoint_bytes_fp32=sum(item.projected_raw_checkpoint_bytes_fp32 for item in architecture_plans),lineage_splits=lineage_splits,target_splits=target_splits,factor_cardinalities=_factor_cardinalities(factor_rows),notes=("Storage is the raw unique-parameter payload at FP32; optimizer state, manifests, " "safetensors headers, traces, and inverse-model artifacts are excluded.","Dataset preparation/tokenizer storage and training FLOPs are not included.",),)
-def plan_public_zoo(config:PublicManifestConfig,*,name:str|None=None,)->ZooProjection:
+    return ZooProjection(kind="text",name=name,architectures=tuple(architecture_plans),lineages=len(factor_rows),checkpoint_targets=sum(item.checkpoint_targets for item in architecture_plans),intervention_targets=sum(item.intervention_targets for item in architecture_plans),targets=sum(item.total_targets for item in architecture_plans),checkpoints_per_lineage=checkpoints_per_lineage,interventions_per_lineage=interventions_per_lineage,targets_per_lineage=targets_per_lineage,projected_raw_checkpoint_bytes_fp32=sum(item.projected_raw_checkpoint_bytes_fp32 for item in architecture_plans),lineage_splits=lineage_splits,target_splits=target_splits,factor_cardinalities=factorcardinalities(factor_rows),notes=("Storage is the raw unique-parameter payload at FP32; optimizer state, manifests, " "safetensors headers, traces, and inverse-model artifacts are excluded.","Dataset preparation/tokenizer storage and training FLOPs are not included.",),)
+def planpubliczoo(config:PublicManifestConfig,*,name:str|None=None,)->ZooProjection:
     lineages=len({(model.model_name,model.external_family)for model in config.models})
     targets=sum(len(model.revisions)for model in config.models)
     split_targets=Counter[str]()
@@ -141,7 +141,7 @@ def plan_public_zoo(config:PublicManifestConfig,*,name:str|None=None,)->ZooProje
         parameter_bytes+=raw_bytes*model_targets
         architecture_rows.append(ArchitectureProjection(architecture_index=architecture_index,configuration={"model_name":model.model_name,"external_family":model.external_family,"architecture_id":model.architecture_id,"revisions":list(model.revisions),},parameters=parameter_count,raw_parameter_bytes_fp32=raw_bytes,lineages=1,checkpoint_targets=model_targets,intervention_targets=0,total_targets=model_targets,projected_raw_checkpoint_bytes_fp32=raw_bytes*model_targets,))
     return ZooProjection(kind="public",name=name,architectures=tuple(architecture_rows),lineages=lineages,checkpoint_targets=targets,intervention_targets=0,targets=targets,checkpoints_per_lineage=None,interventions_per_lineage=None,targets_per_lineage=None,projected_raw_checkpoint_bytes_fp32=parameter_bytes,lineage_splits={split:len(values)for split,values in split_lineages.items()},target_splits={split.value:split_targets[split.value]for split in Split},factor_cardinalities={"external_family":len({model.external_family for model in config.models}),"model_name":len({model.model_name for model in config.models}),"revision":len({revision for model in config.models for revision in model.revisions}),},notes=("Zero-valued parameter/storage estimates indicate a model spec omitted parameter_count.","Public-model revisions are observational targets, not assumed independent lineages.",),)
-def plan_zoo_config(raw:Mapping[str,Any],*,kind:str="auto")->ZooProjection:
+def planzooconfig(raw:Mapping[str,Any],*,kind:str="auto")->ZooProjection:
     resolved=kind
     if resolved=="auto":
         if "models" in raw:
@@ -154,11 +154,11 @@ def plan_zoo_config(raw:Mapping[str,Any],*,kind:str="auto")->ZooProjection:
         else:
             raise ValueError("Could not infer zoo kind; pass --kind micro, text, or public")
     if resolved=="public":
-        return plan_public_zoo(PublicManifestConfig.from_dict(dict(raw)),name=raw.get("name"))
+        return planpubliczoo(PublicManifestConfig.fromdict(dict(raw)),name=raw.get("name"))
     policy=SplitPolicy(**raw.get("split_policy",{}))
     zoo_raw=raw.get("zoo",raw)
     if resolved=="micro":
-        return plan_micro_zoo(MicroZooConfig.from_dict(zoo_raw),split_policy=policy,name=raw.get("name"))
+        return planmicrozoo(MicroZooConfig.fromdict(zoo_raw),split_policy=policy,name=raw.get("name"))
     if resolved=="text":
-        return plan_text_zoo(TextZooConfig.from_dict(zoo_raw),split_policy=policy,name=raw.get("name"))
+        return plantextzoo(TextZooConfig.fromdict(zoo_raw),split_policy=policy,name=raw.get("name"))
     raise ValueError(f"Unsupported zoo kind: {resolved}")

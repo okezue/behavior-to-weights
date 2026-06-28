@@ -17,7 +17,7 @@ def _sha256(path:Path)->str:
         while block:=handle.read(1024*1024):
             digest.update(block)
     return digest.hexdigest()
-def download_transformer_nfn_zoo(name:str,destination:str|Path,*,expected_sha256:str|None=None,overwrite:bool=False,)->DownloadResult:
+def downloadtransformernfnzoo(name:str,destination:str|Path,*,expected_sha256:str|None=None,overwrite:bool=False,)->DownloadResult:
     if name not in TRANSFORMER_NFN_DATASETS:
         raise ValueError(f"Unknown dataset {name!r}; choose from {sorted(TRANSFORMER_NFN_DATASETS)}")
     destination=Path(destination)

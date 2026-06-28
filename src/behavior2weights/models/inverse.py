@@ -5,7 +5,7 @@ from typing import Any,TypedDict,cast
 import torch
 from torch import Tensor,nn
 from torch.nn import functional as F
-from behavior2weights.models.weight_space import AddressSpace
+from behavior2weights.models.weightspace import AddressSpace
 from behavior2weights.schemas import ObservationChannel
 CHANNEL_TO_ID={channel:index for index,channel in enumerate(ObservationChannel)}
 class BehaviorToWeightsOutput(TypedDict):
@@ -41,7 +41,7 @@ class InverseModelConfig:
         if self.decoder_layers<1:
             raise ValueError("decoder_layers must be at least one")
     @classmethod
-    def from_dict(cls,data:Mapping[str,Any])->InverseModelConfig:
+    def fromdict(cls,data:Mapping[str,Any])->InverseModelConfig:
         fields={field.name for field in dataclasses.fields(cls)}
         unknown=set(data)-fields
         if unknown:
@@ -158,7 +158,7 @@ class BehaviorToWeights(nn.Module):
         properties={name:head(latent)for name,head in self.property_heads.items()}
         return{"latent":latent,"weight_mean":mean,"weight_log_variance":log_variance,"properties":properties,}
     @torch.no_grad()
-    def decode_all(self,latent:Tensor,address_space:AddressSpace,*,chunk_size:int=65_536,)->tuple[Tensor,Tensor]:
+    def decodeall(self,latent:Tensor,address_space:AddressSpace,*,chunk_size:int=65_536,)->tuple[Tensor,Tensor]:
         means:list[Tensor]=[]
         log_variances:list[Tensor]=[]
         for start in range(0,address_space.total_parameters,chunk_size):
@@ -168,7 +168,7 @@ class BehaviorToWeights(nn.Module):
             means.append(mean.cpu())
             log_variances.append(log_variance.cpu())
         return torch.cat(means,dim=1),torch.cat(log_variances,dim=1)
-def gaussian_nll(target:Tensor,mean:Tensor,log_variance:Tensor,*,reduction:str="mean",)->Tensor:
+def gaussiannll(target:Tensor,mean:Tensor,log_variance:Tensor,*,reduction:str="mean",)->Tensor:
     loss=0.5*(log_variance+(target-mean).square()*torch.exp(-log_variance))
     if reduction=="none":
         return loss
@@ -177,10 +177,10 @@ def gaussian_nll(target:Tensor,mean:Tensor,log_variance:Tensor,*,reduction:str="
     if reduction=="mean":
         return loss.mean()
     raise ValueError(f"Unsupported reduction: {reduction}")
-def posterior_sample(mean:Tensor,log_variance:Tensor,generator:torch.Generator|None=None)->Tensor:
+def posteriorsample(mean:Tensor,log_variance:Tensor,generator:torch.Generator|None=None)->Tensor:
     noise=torch.randn(mean.shape,dtype=mean.dtype,device=mean.device,generator=generator)
     return mean+torch.exp(0.5*log_variance)*noise
-def property_loss(logits:Mapping[str,Tensor],labels:Mapping[str,Tensor],*,ignore_index:int=-100,)->Tensor:
+def propertyloss(logits:Mapping[str,Tensor],labels:Mapping[str,Tensor],*,ignore_index:int=-100,)->Tensor:
     losses:list[Tensor]=[]
     for name,output in logits.items():
         if name not in labels:

@@ -4,7 +4,7 @@ from typing import cast
 import torch
 from torch import Tensor
 from behavior2weights.models.inverse import BehaviorToWeights
-def behavior_to_weight_jacobian(model:BehaviorToWeights,input_ids:Tensor,observations:Tensor,channel_ids:Tensor,descriptors:Mapping[str,Tensor],*,query_mask:Tensor|None=None,)->Tensor:
+def behaviortoweightjacobian(model:BehaviorToWeights,input_ids:Tensor,observations:Tensor,channel_ids:Tensor,descriptors:Mapping[str,Tensor],*,query_mask:Tensor|None=None,)->Tensor:
     if input_ids.shape[0]!=1:
         raise ValueError("full Jacobian helper currently supports batch size one")
     observations=observations.detach().requires_grad_(True)
@@ -13,7 +13,7 @@ def behavior_to_weight_jacobian(model:BehaviorToWeights,input_ids:Tensor,observa
         return cast(Tensor,output["weight_mean"].squeeze(0))
     return cast(Tensor,torch.autograd.functional.jacobian(prediction,observations,vectorize=True).squeeze(1),)
 @torch.no_grad()
-def transcript_patch_effect(model:BehaviorToWeights,input_ids_a:Tensor,observations_a:Tensor,input_ids_b:Tensor,observations_b:Tensor,channel_ids:Tensor,descriptors:Mapping[str,Tensor],*,query_indices:Tensor,)->Tensor:
+def transcriptpatcheffect(model:BehaviorToWeights,input_ids_a:Tensor,observations_a:Tensor,input_ids_b:Tensor,observations_b:Tensor,channel_ids:Tensor,descriptors:Mapping[str,Tensor],*,query_indices:Tensor,)->Tensor:
     base=model(input_ids_a,observations_a,channel_ids,descriptors)["weight_mean"]
     patched_inputs=input_ids_a.clone()
     patched_observations=observations_a.clone()
@@ -21,7 +21,7 @@ def transcript_patch_effect(model:BehaviorToWeights,input_ids_a:Tensor,observati
     patched_observations[:,query_indices]=observations_b[:,query_indices]
     patched=model(patched_inputs,patched_observations,channel_ids,descriptors)["weight_mean"]
     return cast(Tensor,patched-base)
-def integrated_gradients_observations(model:BehaviorToWeights,input_ids:Tensor,observations:Tensor,channel_ids:Tensor,descriptors:Mapping[str,Tensor],*,target_coordinate:int,baseline:Tensor|None=None,steps:int=32,)->Tensor:
+def integratedgradientsobservations(model:BehaviorToWeights,input_ids:Tensor,observations:Tensor,channel_ids:Tensor,descriptors:Mapping[str,Tensor],*,target_coordinate:int,baseline:Tensor|None=None,steps:int=32,)->Tensor:
     baseline=torch.zeros_like(observations)if baseline is None else baseline
     total_gradient=torch.zeros_like(observations)
     for alpha in torch.linspace(0,1,steps,device=observations.device):

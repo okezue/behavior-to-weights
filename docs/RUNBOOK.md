@@ -27,7 +27,7 @@ Archive the smoke report with the environment but do not mix it into scientific 
 8. Freeze confirmatory config, commit, manifests, and SAP:
 
    ```bash
-   python scripts/freeze_study.py \
+   python scripts/freezestudy.py \
      studies/<study>/experiment.yaml studies/<study>/zoo.yaml \
      studies/<study>/inverse.yaml studies/<study>/SAP.md \
      --study-id <immutable-study-id> \
@@ -107,7 +107,7 @@ Keep:
    ```bash
    b2w evaluate micro --manifest ... --traces ... --checkpoint ... --output results.jsonl
    b2w evaluate properties --manifest ... --traces ... --checkpoint ... --output properties.jsonl
-   python scripts/aggregate_results.py results.jsonl \
+   python scripts/aggregateresults.py results.jsonl \
      --contrast method \
      --fixed-query-policy random \
      --metric weight_nrmse:lower \

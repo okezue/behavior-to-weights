@@ -29,10 +29,10 @@ class MicroTransformerConfig:
         if self.vocab_size<4:
             raise ValueError("vocab_size must be at least 4")
     @property
-    def head_dim(self)->int:
+    def headdim(self)->int:
         return self.d_model//self.n_heads
     @classmethod
-    def from_dict(cls,data:Mapping[str,Any])->MicroTransformerConfig:
+    def fromdict(cls,data:Mapping[str,Any])->MicroTransformerConfig:
         fields={field.name for field in dataclasses.fields(cls)}
         unknown=set(data)-fields
         if unknown:
@@ -55,13 +55,13 @@ class CausalSelfAttention(nn.Module):
     def forward(self,x:Tensor,*,capture:bool=False)->Tensor:
         batch,seq_len,width=x.shape
         heads=self.config.n_heads
-        head_dim=self.config.head_dim
-        def shape_projection(projection:nn.Linear)->Tensor:
-            return cast(Tensor,projection(x).view(batch,seq_len,heads,head_dim).transpose(1,2))
-        q=shape_projection(self.q_proj)
-        k=shape_projection(self.k_proj)
-        v=shape_projection(self.v_proj)
-        scores=q@k.transpose(-2,-1)/math.sqrt(head_dim)
+        headdim=self.config.headdim
+        def shapeprojection(projection:nn.Linear)->Tensor:
+            return cast(Tensor,projection(x).view(batch,seq_len,heads,headdim).transpose(1,2))
+        q=shapeprojection(self.q_proj)
+        k=shapeprojection(self.k_proj)
+        v=shapeprojection(self.v_proj)
+        scores=q@k.transpose(-2,-1)/math.sqrt(headdim)
         scores=scores.masked_fill(self.causal_mask[:seq_len,:seq_len],float("-inf"))
         attention=F.softmax(scores,dim=-1)
         attention=self.dropout(attention)
@@ -105,12 +105,12 @@ class MicroTransformer(nn.Module):
         self.lm_head=nn.Linear(config.d_model,config.vocab_size,bias=False)
         if config.tie_embeddings:
             self.lm_head.weight=self.token_embedding.weight
-        self.apply(self._init_weights)
+        self.apply(self.initweights)
         for name,parameter in self.named_parameters():
             if name.endswith("o_proj.weight")or name.endswith("fc2.weight"):
                 nn.init.normal_(parameter,mean=0.0,std=0.02/math.sqrt(2*config.n_layers))
     @staticmethod
-    def _init_weights(module:nn.Module)->None:
+    def initweights(module:nn.Module)->None:
         if isinstance(module,(nn.Linear,nn.Embedding)):
             nn.init.normal_(module.weight,mean=0.0,std=0.02)
             if isinstance(module,nn.Linear)and module.bias is not None:
@@ -144,9 +144,9 @@ class MicroTransformer(nn.Module):
             next_token=torch.multinomial(probabilities,num_samples=1,generator=generator)
             output=torch.cat([output,next_token],dim=1)
         return output
-    def num_parameters(self,*,trainable_only:bool=False)->int:
+    def numparameters(self,*,trainable_only:bool=False)->int:
         return sum(parameter.numel()for parameter in self.parameters()if parameter.requires_grad or not trainable_only)
-    def ordered_state_dict(self)->OrderedDict[str,Tensor]:
+    def orderedstatedict(self)->OrderedDict[str,Tensor]:
         return OrderedDict((name,tensor.detach())for name,tensor in self.state_dict().items())
     def save(self,path:str|Path,*,metadata:Mapping[str,str]|None=None)->None:
         path=Path(path)
@@ -161,7 +161,7 @@ class MicroTransformer(nn.Module):
         state=load_file(str(path),device=str(device))
         model.load_state_dict(state,strict=True)
         return model.to(device)
-def flatten_state_dict(state_dict:Mapping[str,Tensor],)->tuple[Tensor,list[tuple[str,tuple[int,...]]]]:
+def flattenstatedict(state_dict:Mapping[str,Tensor],)->tuple[Tensor,list[tuple[str,tuple[int,...]]]]:
     tensors:list[Tensor]=[]
     spec:list[tuple[str,tuple[int,...]]]=[]
     for name,tensor in state_dict.items():
@@ -172,7 +172,7 @@ def flatten_state_dict(state_dict:Mapping[str,Tensor],)->tuple[Tensor,list[tuple
     if not tensors:
         return torch.empty(0),spec
     return torch.cat(tensors),spec
-def unflatten_state_dict(vector:Tensor,spec:list[tuple[str,tuple[int,...]]],*,template:Mapping[str,Tensor]|None=None,)->OrderedDict[str,Tensor]:
+def unflattenstatedict(vector:Tensor,spec:list[tuple[str,tuple[int,...]]],*,template:Mapping[str,Tensor]|None=None,)->OrderedDict[str,Tensor]:
     result:OrderedDict[str,Tensor]=OrderedDict()
     offset=0
     for name,shape in spec:
@@ -187,14 +187,14 @@ def unflatten_state_dict(vector:Tensor,spec:list[tuple[str,tuple[int,...]]],*,te
     if offset!=vector.numel():
         raise ValueError(f"Vector has {vector.numel() - offset} trailing values")
     return result
-def permute_attention_heads(state_dict:Mapping[str,Tensor],config:MicroTransformerConfig,layer:int,permutation:Tensor,)->OrderedDict[str,Tensor]:
+def permuteattentionheads(state_dict:Mapping[str,Tensor],config:MicroTransformerConfig,layer:int,permutation:Tensor,)->OrderedDict[str,Tensor]:
     if permutation.tolist()==list(range(config.n_heads)):
         return OrderedDict((name,value.clone())for name,value in state_dict.items())
     if sorted(permutation.tolist())!=list(range(config.n_heads)):
         raise ValueError("permutation must contain each head index exactly once")
     result=OrderedDict((name,value.clone())for name,value in state_dict.items())
-    head_dim=config.head_dim
-    index=torch.cat([torch.arange(head*head_dim,(head+1)*head_dim)for head in permutation.tolist()])
+    headdim=config.headdim
+    index=torch.cat([torch.arange(head*headdim,(head+1)*headdim)for head in permutation.tolist()])
     prefix=f"blocks.{layer}.attn"
     for projection in("q_proj","k_proj","v_proj"):
         weight_name=f"{prefix}.{projection}.weight"
@@ -205,7 +205,7 @@ def permute_attention_heads(state_dict:Mapping[str,Tensor],config:MicroTransform
     output_name=f"{prefix}.o_proj.weight"
     result[output_name]=result[output_name][:,index]
     return result
-def permute_mlp_neurons(state_dict:Mapping[str,Tensor],layer:int,permutation:Tensor,)->OrderedDict[str,Tensor]:
+def permutemlpneurons(state_dict:Mapping[str,Tensor],layer:int,permutation:Tensor,)->OrderedDict[str,Tensor]:
     result=OrderedDict((name,value.clone())for name,value in state_dict.items())
     prefix=f"blocks.{layer}.mlp"
     fc1_weight=f"{prefix}.fc1.weight"
@@ -219,19 +219,19 @@ def permute_mlp_neurons(state_dict:Mapping[str,Tensor],layer:int,permutation:Ten
         result[fc1_bias]=result[fc1_bias][permutation]
     result[fc2_weight]=result[fc2_weight][:,permutation]
     return result
-def canonicalize_state_dict(state_dict:Mapping[str,Tensor],config:MicroTransformerConfig)->OrderedDict[str,Tensor]:
+def canonicalizestatedict(state_dict:Mapping[str,Tensor],config:MicroTransformerConfig)->OrderedDict[str,Tensor]:
     result=OrderedDict((name,value.clone())for name,value in state_dict.items())
     for layer in range(config.n_layers):
         prefix=f"blocks.{layer}.attn"
         signatures:list[tuple[float,...]]=[]
         for head in range(config.n_heads):
-            sl=slice(head*config.head_dim,(head+1)*config.head_dim)
+            sl=slice(head*config.headdim,(head+1)*config.headdim)
             pieces=[result[f"{prefix}.q_proj.weight"][sl],result[f"{prefix}.k_proj.weight"][sl],result[f"{prefix}.v_proj.weight"][sl],result[f"{prefix}.o_proj.weight"][:,sl],]
             flattened=torch.cat([piece.reshape(-1).float()for piece in pieces])
             projection=torch.linspace(-1.0,1.0,flattened.numel(),device=flattened.device)
             signatures.append((float(flattened.norm().item()),float((flattened*projection).sum().item()),float(flattened.mean().item()),))
         permutation=torch.tensor(sorted(range(config.n_heads),key=signatures.__getitem__))
-        result=permute_attention_heads(result,config,layer,permutation)
+        result=permuteattentionheads(result,config,layer,permutation)
         mlp_prefix=f"blocks.{layer}.mlp"
         fc1=result[f"{mlp_prefix}.fc1.weight"]
         fc2=result[f"{mlp_prefix}.fc2.weight"]
@@ -241,5 +241,5 @@ def canonicalize_state_dict(state_dict:Mapping[str,Tensor],config:MicroTransform
             projection=torch.linspace(-0.5,0.5,flattened.numel(),device=flattened.device)
             signatures_mlp.append((float(flattened.norm().item()),float((flattened*projection).sum().item()),float(flattened.mean().item()),))
         neuron_permutation=torch.tensor(sorted(range(config.d_ff),key=signatures_mlp.__getitem__))
-        result=permute_mlp_neurons(result,layer,neuron_permutation)
+        result=permutemlpneurons(result,layer,neuron_permutation)
     return result

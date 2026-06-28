@@ -30,7 +30,7 @@ aim-down:
 	docker compose -f infra/aim/docker-compose.yml down
 
 package:
-	bash scripts/package_repo.sh
+	bash scripts/packagerepo.sh
 
 clean:
 	rm -rf artifacts/* dist .pytest_cache .ruff_cache .mypy_cache .coverage htmlcov

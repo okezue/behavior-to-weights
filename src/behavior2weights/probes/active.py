@@ -9,13 +9,13 @@ class ActiveSelection:
     indices:Tensor
     utilities:Tensor
     policy:str
-def random_select(candidate_count:int,budget:int,*,seed:int=0)->ActiveSelection:
+def randomselect(candidate_count:int,budget:int,*,seed:int=0)->ActiveSelection:
     if not 0<budget<=candidate_count:
         raise ValueError("budget must be in (0, candidate_count]")
     generator=torch.Generator().manual_seed(seed)
     indices=torch.randperm(candidate_count,generator=generator)[:budget]
     return ActiveSelection(indices=indices,utilities=torch.zeros(budget),policy="random")
-def ensemble_disagreement(candidate_observations:Tensor,*,budget:int,selected:Sequence[int]=(),)->ActiveSelection:
+def ensembledisagreement(candidate_observations:Tensor,*,budget:int,selected:Sequence[int]=(),)->ActiveSelection:
     if candidate_observations.ndim!=3:
         raise ValueError("candidate_observations must have [samples, candidates, features]")
     utilities=candidate_observations.float().var(dim=0,unbiased=False).mean(dim=-1)
@@ -27,7 +27,7 @@ def ensemble_disagreement(candidate_observations:Tensor,*,budget:int,selected:Se
         raise ValueError("budget exceeds unselected candidates")
     values,indices=torch.topk(utilities,budget)
     return ActiveSelection(indices=indices,utilities=values,policy="ensemble_disagreement")
-def expected_parameter_information_gain(predicted_means:Tensor,predicted_log_variances:Tensor,*,budget:int,)->ActiveSelection:
+def expectedparameterinformationgain(predicted_means:Tensor,predicted_log_variances:Tensor,*,budget:int,)->ActiveSelection:
     if predicted_means.shape!=predicted_log_variances.shape or predicted_means.ndim!=3:
         raise ValueError("means/log-variances must share [candidates, samples, coordinates] shape")
     epistemic=predicted_means.var(dim=1,unbiased=False)
@@ -44,7 +44,7 @@ class LearnedQueryScorer(nn.Module):
             raise ValueError("query_embeddings must have [batch, candidates, width]")
         expanded=posterior_state[:,None,:].expand(-1,query_embeddings.shape[1],-1)
         return cast(Tensor,self.network(torch.cat([query_embeddings,expanded],dim=-1)).squeeze(-1))
-def training_population_order(observations:Tensor,lineage_ids:Sequence[str],*,policy:str="population_disagreement",seed:int=0,)->ActiveSelection:
+def trainingpopulationorder(observations:Tensor,lineage_ids:Sequence[str],*,policy:str="population_disagreement",seed:int=0,)->ActiveSelection:
     if observations.ndim!=3:
         raise ValueError("observations must have [targets, candidates, features]")
     if observations.shape[0]!=len(lineage_ids):
@@ -53,7 +53,7 @@ def training_population_order(observations:Tensor,lineage_ids:Sequence[str],*,po
         raise ValueError("observations cannot be empty")
     candidate_count=observations.shape[1]
     if policy=="random":
-        return random_select(candidate_count,candidate_count,seed=seed)
+        return randomselect(candidate_count,candidate_count,seed=seed)
     if policy!="population_disagreement":
         raise ValueError("policy must be 'random' or 'population_disagreement' for a frozen trace ranking")
     grouped:dict[str,list[int]]={}

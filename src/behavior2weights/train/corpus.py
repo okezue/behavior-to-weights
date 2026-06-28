@@ -5,8 +5,8 @@ from collections.abc import Sequence
 from pathlib import Path
 import torch
 from torch import Tensor
-from behavior2weights.models.micro_transformer import(MicroTransformerConfig,canonicalize_state_dict,)
-from behavior2weights.models.weight_space import AddressSpace,WeightStandardizer
+from behavior2weights.models.microtransformer import(MicroTransformerConfig,canonicalizestatedict,)
+from behavior2weights.models.weightspace import AddressSpace,WeightStandardizer
 from behavior2weights.schemas import ObservationChannel,Split,TargetRecord
 from behavior2weights.targets.micro import MicroTransformerAdapter
 from behavior2weights.traces.store import TraceBundle
@@ -35,7 +35,7 @@ class InverseTrainingCorpus:
             raw_config=record.metadata.get("model_config")
             if not isinstance(raw_config,dict):
                 raise ValueError(f"missing model_config for {record.target_id}")
-            current_config=MicroTransformerConfig.from_dict(raw_config)
+            current_config=MicroTransformerConfig.fromdict(raw_config)
             if config is None:
                 config=current_config
             elif current_config!=config:
@@ -43,8 +43,8 @@ class InverseTrainingCorpus:
             model=self.adapter.load(record)
             state=OrderedDict((name,tensor.detach().cpu())for name,tensor in model.state_dict().items()if tensor.is_floating_point())
             if canonicalize:
-                state=canonicalize_state_dict(state,current_config)
-            current_space=AddressSpace.from_state_dict(state)
+                state=canonicalizestatedict(state,current_config)
+            current_space=AddressSpace.fromstatedict(state)
             if address_space is None:
                 address_space=current_space
             elif[spec.name for spec in current_space.specs]!=[spec.name for spec in address_space.specs]or[spec.shape for spec in current_space.specs]!=[spec.shape for spec in address_space.specs]:
@@ -53,17 +53,17 @@ class InverseTrainingCorpus:
         assert config is not None and address_space is not None
         self.model_config=config
         self.address_space=address_space
-        self.role_ids=address_space.role_ids_for_all()
+        self.role_ids=address_space.roleidsforall()
         self._record_index={target.record.target_id:index for index,target in enumerate(self.targets)}
-    def indices_for_split(self,split:Split)->list[int]:
+    def indicesforsplit(self,split:Split)->list[int]:
         return[index for index,target in enumerate(self.targets)if target.record.split==split]
-    def fit_standardizer(self,indices:Sequence[int]|None=None)->WeightStandardizer:
-        indices=list(indices if indices is not None else self.indices_for_split(Split.TRAIN))
+    def fitstandardizer(self,indices:Sequence[int]|None=None)->WeightStandardizer:
+        indices=list(indices if indices is not None else self.indicesforsplit(Split.TRAIN))
         if not indices:
             raise ValueError("cannot fit weight standardizer without training targets")
         vectors=torch.stack([self.targets[index].vector for index in indices])
         return WeightStandardizer.fit(vectors,self.role_ids)
-    def sample_batch(self,target_indices:Sequence[int],*,batch_size:int,query_budget:int,coordinate_count:int,standardizer:WeightStandardizer,generator:torch.Generator,fixed_query_indices:Tensor|None=None,)->dict[str,Tensor|dict[str,Tensor]]:
+    def samplebatch(self,target_indices:Sequence[int],*,batch_size:int,query_budget:int,coordinate_count:int,standardizer:WeightStandardizer,generator:torch.Generator,fixed_query_indices:Tensor|None=None,)->dict[str,Tensor|dict[str,Tensor]]:
         if not target_indices:
             raise ValueError("target_indices cannot be empty")
         choices=torch.randint(len(target_indices),(batch_size,),generator=generator)
@@ -81,11 +81,11 @@ class InverseTrainingCorpus:
         input_ids=self.traces.input_ids[query_indices]
         channel_id=list(ObservationChannel).index(self.traces.channel)
         channel_ids=torch.full((batch_size,query_budget),channel_id,dtype=torch.long)
-        coordinate_indices=self.address_space.sample_indices(coordinate_count,generator=generator,stratified_by_role=True,)
+        coordinate_indices=self.address_space.sampleindices(coordinate_count,generator=generator,stratified_by_role=True,)
         descriptors=self.address_space.descriptors(coordinate_indices)
         role_ids=descriptors["role_id"]
         targets=torch.stack([self.targets[index].vector[coordinate_indices]for index in selected_indices])
         standardized_targets=standardizer.transform(targets,role_ids)
         return{"input_ids":input_ids,"observations":observations,"channel_ids":channel_ids,"query_mask":torch.ones(batch_size,query_budget,dtype=torch.bool),"descriptors":descriptors,"target_weights":standardized_targets,"coordinate_indices":coordinate_indices,"target_indices":torch.tensor(selected_indices),}
-    def target_vector(self,index:int)->Tensor:
+    def targetvector(self,index:int)->Tensor:
         return self.targets[index].vector

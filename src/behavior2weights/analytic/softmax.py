@@ -10,7 +10,7 @@ import numpy as np
 import torch
 from torch import Tensor
 from torch.nn import functional as F
-from behavior2weights.utils import stable_hash,write_jsonl
+from behavior2weights.utils import stablehash,writejsonl
 @dataclasses.dataclass(frozen=True,slots=True)
 class LinearSoftmaxExperimentConfig:
     input_dims:tuple[int,...]=(2,4,8)
@@ -27,7 +27,7 @@ class LinearSoftmaxExperimentConfig:
     ridge:float=0.0
     seed:int=20260621
     @classmethod
-    def from_dict(cls,raw:Mapping[str,Any])->LinearSoftmaxExperimentConfig:
+    def fromdict(cls,raw:Mapping[str,Any])->LinearSoftmaxExperimentConfig:
         known={field.name for field in dataclasses.fields(cls)}
         unknown=set(raw)-known
         if unknown:
@@ -68,19 +68,19 @@ class LinearSoftmaxRecovery:
     design_condition_number:float
     observable_dimension:int
     orbit_dimension:int
-def canonical_softmax_parameters(weight:Tensor,bias:Tensor)->Tensor:
+def canonicalsoftmaxparameters(weight:Tensor,bias:Tensor)->Tensor:
     if weight.ndim!=2 or bias.ndim!=1 or weight.shape[0]!=bias.shape[0]:
         raise ValueError("weight/bias shapes must be [classes, input_dim] and [classes]")
     relative_weight=weight[:-1]-weight[-1]
     relative_bias=bias[:-1]-bias[-1]
     return torch.cat([relative_weight,relative_bias[:,None]],dim=1).transpose(0,1)
-def probabilities_from_canonical(design:Tensor,beta:Tensor)->Tensor:
+def probabilitiesfromcanonical(design:Tensor,beta:Tensor)->Tensor:
     if design.ndim!=2 or beta.ndim!=2 or design.shape[1]!=beta.shape[0]:
         raise ValueError("design and beta dimensions are incompatible")
     relative_logits=design@beta
     reference=torch.zeros(design.shape[0],1,dtype=relative_logits.dtype,device=relative_logits.device)
     return F.softmax(torch.cat([relative_logits,reference],dim=1),dim=1)
-def _matrix_rank_and_condition(design:Tensor)->tuple[int,float]:
+def matrixrankandcondition(design:Tensor)->tuple[int,float]:
     singular=torch.linalg.svdvals(design.double())
     if singular.numel()==0:
         return 0,math.inf
@@ -90,7 +90,7 @@ def _matrix_rank_and_condition(design:Tensor)->tuple[int,float]:
     if rank<design.shape[1]or rank==0:
         return rank,math.inf
     return rank,float((nonzero.max()/nonzero.min()).item())
-def recover_linear_softmax(design:Tensor,observations:Tensor,*,observation_channel:str,sample_count:int|None=None,smoothing:float=0.5,ridge:float=0.0,)->LinearSoftmaxRecovery:
+def recoverlinearsoftmax(design:Tensor,observations:Tensor,*,observation_channel:str,sample_count:int|None=None,smoothing:float=0.5,ridge:float=0.0,)->LinearSoftmaxRecovery:
     if design.ndim!=2 or observations.ndim!=2:
         raise ValueError("design and observations must be matrices")
     if design.shape[0]!=observations.shape[0]or observations.shape[1]<2:
@@ -115,10 +115,10 @@ def recover_linear_softmax(design:Tensor,observations:Tensor,*,observation_chann
         recovered=torch.linalg.solve(gram+ridge*torch.eye(gram.shape[0],dtype=gram.dtype),rhs)
     else:
         recovered=torch.linalg.lstsq(matrix,log_odds).solution
-    rank,condition=_matrix_rank_and_condition(matrix)
+    rank,condition=matrixrankandcondition(matrix)
     classes=observations.shape[1]
     return LinearSoftmaxRecovery(recovered_beta=recovered,design_rank=rank,design_condition_number=condition,observable_dimension=rank*(classes-1),orbit_dimension=design.shape[1]*(classes-1),)
-def _design_matrix(query_count:int,input_dim:int,strategy:str,*,query_scale:float,generator:torch.Generator,)->Tensor:
+def designmatrix(query_count:int,input_dim:int,strategy:str,*,query_scale:float,generator:torch.Generator,)->Tensor:
     if strategy=="gaussian":
         inputs=torch.randn(query_count,input_dim,generator=generator)*query_scale
     elif strategy=="basis":
@@ -131,17 +131,17 @@ def _design_matrix(query_count:int,input_dim:int,strategy:str,*,query_scale:floa
     else:
         raise ValueError(f"unknown query strategy: {strategy}")
     return torch.cat([inputs,torch.ones(query_count,1)],dim=1)
-def _system_seed(base_seed:int,payload:Mapping[str,Any])->int:
-    return int(stable_hash({"base_seed":base_seed,**dict(payload)},length=16),16)%(2**63-1)
-def _normalized_rmse(estimate:Tensor,target:Tensor)->float:
+def systemseed(base_seed:int,payload:Mapping[str,Any])->int:
+    return int(stablehash({"base_seed":base_seed,**dict(payload)},length=16),16)%(2**63-1)
+def normalizedrmse(estimate:Tensor,target:Tensor)->float:
     numerator=(estimate-target).square().mean().sqrt()
     denominator=target.square().mean().sqrt().clamp_min(1e-12)
     return float((numerator/denominator).item())
-def _forward_kl(target:Tensor,estimate:Tensor)->float:
+def forwardkl(target:Tensor,estimate:Tensor)->float:
     target=target.double().clamp_min(1e-15)
     estimate=estimate.double().clamp_min(1e-15)
     return float((target*(target.log()-estimate.log())).sum(dim=-1).mean().item())
-def run_linear_softmax_experiment(config:LinearSoftmaxExperimentConfig,output_directory:str|Path,)->dict[str,Any]:
+def runlinearsoftmaxexperiment(config:LinearSoftmaxExperimentConfig,output_directory:str|Path,)->dict[str,Any]:
     output=Path(output_directory)
     output.mkdir(parents=True,exist_ok=True)
     rows:list[dict[str,Any]]=[]
@@ -154,13 +154,13 @@ def run_linear_softmax_experiment(config:LinearSoftmaxExperimentConfig,output_di
                         for sample_count in sample_grid:
                             for replicate in range(config.systems_per_cell):
                                 factors={"input_dim":input_dim,"class_count":class_count,"query_count":query_count,"query_strategy":strategy,"observation_channel":channel,"sample_count":sample_count,"replicate":replicate,}
-                                seed=_system_seed(config.seed,factors)
+                                seed=systemseed(config.seed,factors)
                                 generator=torch.Generator().manual_seed(seed)
                                 weight=(torch.randn(class_count,input_dim,generator=generator)*config.weight_scale)
                                 bias=(torch.randn(class_count,generator=generator)*config.weight_scale)
-                                beta=canonical_softmax_parameters(weight,bias).double()
-                                design=_design_matrix(query_count,input_dim,strategy,query_scale=config.query_scale,generator=generator,).double()
-                                probabilities=probabilities_from_canonical(design,beta)
+                                beta=canonicalsoftmaxparameters(weight,bias).double()
+                                design=designmatrix(query_count,input_dim,strategy,query_scale=config.query_scale,generator=generator,).double()
+                                probabilities=probabilitiesfromcanonical(design,beta)
                                 if channel=="probabilities":
                                     observations=probabilities
                                 else:
@@ -168,14 +168,14 @@ def run_linear_softmax_experiment(config:LinearSoftmaxExperimentConfig,output_di
                                     numpy_rng=np.random.default_rng(seed+1)
                                     counts=np.stack([numpy_rng.multinomial(sample_count,row.cpu().numpy())for row in probabilities])
                                     observations=torch.from_numpy(counts)
-                                recovery=recover_linear_softmax(design,observations,observation_channel=channel,sample_count=sample_count,smoothing=config.dirichlet_smoothing,ridge=config.ridge,)
+                                recovery=recoverlinearsoftmax(design,observations,observation_channel=channel,sample_count=sample_count,smoothing=config.dirichlet_smoothing,ridge=config.ridge,)
                                 holdout=torch.cat([torch.randn(config.holdout_queries,input_dim,generator=generator,)*config.query_scale,torch.ones(config.holdout_queries,1),],dim=1,).double()
-                                true_probabilities=probabilities_from_canonical(holdout,beta)
-                                recovered_probabilities=probabilities_from_canonical(holdout,recovery.recovered_beta)
+                                true_probabilities=probabilitiesfromcanonical(holdout,beta)
+                                recovered_probabilities=probabilitiesfromcanonical(holdout,recovery.recovered_beta)
                                 rank_fraction=(recovery.observable_dimension/recovery.orbit_dimension)
-                                rows.append({"system_id":f"softmax-{stable_hash(factors, length=24)}",**factors,"seed":seed,"design_rank":recovery.design_rank,"design_columns":input_dim+1,"design_condition_number":(recovery.design_condition_number if math.isfinite(recovery.design_condition_number)else None),"observable_dimension":recovery.observable_dimension,"orbit_dimension":recovery.orbit_dimension,"observable_fraction":rank_fraction,"orbit_nrmse":_normalized_rmse(recovery.recovered_beta,beta),"functional_forward_kl":_forward_kl(true_probabilities,recovered_probabilities,),"full_rank":recovery.design_rank==input_dim+1,"exact_recovery":(channel=="probabilities" and recovery.design_rank==input_dim+1 and _normalized_rmse(recovery.recovered_beta,beta)<1e-8),})
+                                rows.append({"system_id":f"softmax-{stablehash(factors, length=24)}",**factors,"seed":seed,"design_rank":recovery.design_rank,"design_columns":input_dim+1,"design_condition_number":(recovery.design_condition_number if math.isfinite(recovery.design_condition_number)else None),"observable_dimension":recovery.observable_dimension,"orbit_dimension":recovery.orbit_dimension,"observable_fraction":rank_fraction,"orbit_nrmse":normalizedrmse(recovery.recovered_beta,beta),"functional_forward_kl":forwardkl(true_probabilities,recovered_probabilities,),"full_rank":recovery.design_rank==input_dim+1,"exact_recovery":(channel=="probabilities" and recovery.design_rank==input_dim+1 and normalizedrmse(recovery.recovered_beta,beta)<1e-8),})
     result_path=output/"results.jsonl"
-    write_jsonl(result_path,rows)
+    writejsonl(result_path,rows)
     grouped:dict[tuple[Any,...],list[dict[str,Any]]]=defaultdict(list)
     keys=("input_dim","class_count","query_count","query_strategy","observation_channel","sample_count",)
     for row in rows:

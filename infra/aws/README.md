@@ -6,10 +6,10 @@ environment, queue, ECR repository, S3 bucket, CloudWatch log group, and least-p
 1. Build `Dockerfile`, tag it with the exact Git commit, and push it to ECR.
 2. Replace placeholders in `job-definition.template.json`; register the job definition.
 3. Keep manifests, query banks, configs, and outputs under immutable S3 prefixes.
-4. Submit with `submit_batch.py`; use `--dry-run` to audit the request without AWS access.
+4. Submit with `submitbatch.py`; use `--dry-run` to audit the request without AWS access.
 
 ```bash
-python infra/aws/submit_batch.py --dry-run \
+python infra/aws/submitbatch.py --dry-run \
   --job-name b2w-tier2-zoo \
   --job-queue YOUR_QUEUE \
   --job-definition behavior-to-weights-gpu:1 \

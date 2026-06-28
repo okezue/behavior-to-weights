@@ -2,7 +2,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 from pydantic import BaseModel,ConfigDict,Field,model_validator
-from behavior2weights.utils import deep_merge,load_yaml
+from behavior2weights.utils import deepmerge,loadyaml
 class StrictModel(BaseModel):
     model_config=ConfigDict(extra="forbid",validate_assignment=True)
 class PathsConfig(StrictModel):
@@ -33,13 +33,13 @@ class RootConfig(StrictModel):
     runtime:RuntimeConfig=Field(default_factory=RuntimeConfig)
     experiment:dict[str,Any]=Field(default_factory=dict)
     @model_validator(mode="after")
-    def ensure_paths(self)->RootConfig:
+    def ensurepaths(self)->RootConfig:
         self.paths.data_root=Path(self.paths.data_root)
         self.paths.artifact_root=Path(self.paths.artifact_root)
         self.paths.cache_root=Path(self.paths.cache_root)
         return self
-def load_root_config(path:str|Path,overrides:dict[str,Any]|None=None)->RootConfig:
-    raw=load_yaml(path)
+def loadrootconfig(path:str|Path,overrides:dict[str,Any]|None=None)->RootConfig:
+    raw=loadyaml(path)
     if overrides:
-        raw=deep_merge(raw,overrides)
+        raw=deepmerge(raw,overrides)
     return RootConfig.model_validate(raw)

@@ -45,7 +45,7 @@ class TargetRecord(StrictSchema):
     metadata:dict[str,Any]=Field(default_factory=dict)
     @field_validator("checkpoint_path",mode="before")
     @classmethod
-    def convert_checkpoint_path(cls,value:Any)->Path:
+    def convertcheckpointpath(cls,value:Any)->Path:
         return Path(value)
 class QueryRecord(StrictSchema):
     query_id:str

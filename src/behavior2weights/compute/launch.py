@@ -16,7 +16,7 @@ class SlurmSpec:
     account:str|None=None
     constraint:str|None=None
     environment_setup:tuple[str,...]=()
-def render_slurm(spec:SlurmSpec)->str:
+def renderslurm(spec:SlurmSpec)->str:
     directives=["#!/usr/bin/env bash","set -euo pipefail",f"#SBATCH --job-name={spec.job_name}",f"#SBATCH --partition={spec.partition}",f"#SBATCH --time={spec.time}",f"#SBATCH --nodes={spec.nodes}",f"#SBATCH --gpus-per-node={spec.gpus_per_node}",f"#SBATCH --cpus-per-task={spec.cpus_per_task}",f"#SBATCH --mem={spec.memory}",]
     if spec.array:
         directives.append(f"#SBATCH --array={spec.array}")
@@ -26,9 +26,9 @@ def render_slurm(spec:SlurmSpec)->str:
         directives.append(f"#SBATCH --constraint={spec.constraint}")
     directives.extend(["",*spec.environment_setup,"",shlex.join(spec.command),""])
     return "\n".join(directives)
-def write_slurm(spec:SlurmSpec,path:str|Path)->Path:
+def writeslurm(spec:SlurmSpec,path:str|Path)->Path:
     path=Path(path)
     path.parent.mkdir(parents=True,exist_ok=True)
-    path.write_text(render_slurm(spec))
+    path.write_text(renderslurm(spec))
     path.chmod(0o755)
     return path

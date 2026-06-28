@@ -1,3 +1,3 @@
-from behavior2weights.compute.launch import SlurmSpec,render_slurm
-from behavior2weights.compute.runtime import resolve_device,runtime_info
-__all__=["SlurmSpec","render_slurm","resolve_device","runtime_info"]
+from behavior2weights.compute.launch import SlurmSpec,renderslurm
+from behavior2weights.compute.runtime import resolvedevice,runtimeinfo
+__all__=["SlurmSpec","renderslurm","resolvedevice","runtimeinfo"]

@@ -4,22 +4,22 @@ from typing import Any
 import torch
 from torch import Tensor,nn
 from torch.nn import functional as F
-def normalized_rmse(prediction:Tensor,target:Tensor,epsilon:float=1e-12)->float:
+def normalizedrmse(prediction:Tensor,target:Tensor,epsilon:float=1e-12)->float:
     numerator=(prediction.float()-target.float()).square().mean().sqrt()
     denominator=target.float().square().mean().sqrt().clamp_min(epsilon)
     return float((numerator/denominator).item())
 def cosine_similarity(prediction:Tensor,target:Tensor)->float:
     return float(F.cosine_similarity(prediction.float().reshape(1,-1),target.float().reshape(1,-1)).item())
-def state_dict_metrics(prediction:Mapping[str,Tensor],target:Mapping[str,Tensor])->dict[str,Any]:
+def statedictmetrics(prediction:Mapping[str,Tensor],target:Mapping[str,Tensor])->dict[str,Any]:
     shared=[name for name in target if name in prediction and target[name].is_floating_point()]
     if not shared:
         raise ValueError("no shared floating-point tensors")
     predicted_vector=torch.cat([prediction[name].reshape(-1).cpu()for name in shared])
-    target_vector=torch.cat([target[name].reshape(-1).cpu()for name in shared])
-    per_tensor={name:{"nrmse":normalized_rmse(prediction[name],target[name]),"cosine":cosine_similarity(prediction[name],target[name]),}for name in shared}
-    return{"nrmse":normalized_rmse(predicted_vector,target_vector),"cosine":cosine_similarity(predicted_vector,target_vector),"per_tensor":per_tensor,}
+    targetvector=torch.cat([target[name].reshape(-1).cpu()for name in shared])
+    per_tensor={name:{"nrmse":normalizedrmse(prediction[name],target[name]),"cosine":cosine_similarity(prediction[name],target[name]),}for name in shared}
+    return{"nrmse":normalizedrmse(predicted_vector,targetvector),"cosine":cosine_similarity(predicted_vector,targetvector),"per_tensor":per_tensor,}
 @torch.no_grad()
-def functional_metrics(prediction_model:nn.Module,target_model:nn.Module,input_ids:Tensor,*,batch_size:int=128,device:str|torch.device="cpu",)->dict[str,float]:
+def functionalmetrics(prediction_model:nn.Module,target_model:nn.Module,input_ids:Tensor,*,batch_size:int=128,device:str|torch.device="cpu",)->dict[str,float]:
     prediction_model=prediction_model.to(device).eval()
     target_model=target_model.to(device).eval()
     kl_sum=0.0
@@ -48,7 +48,7 @@ def functional_metrics(prediction_model:nn.Module,target_model:nn.Module,input_i
         probability_l1_sum+=float((prediction_probs-target_probs).abs().sum(dim=-1).sum().item())
         count+=batch_count
     return{"forward_kl":kl_sum/count,"reverse_kl":reverse_kl_sum/count,"top1_agreement":agreement_sum/count,"probability_l1":probability_l1_sum/count,}
-def posterior_calibration(target:Tensor,mean:Tensor,log_variance:Tensor,levels:tuple[float,...]=(0.5,0.8,0.9,0.95),)->dict[str,float]:
+def posteriorcalibration(target:Tensor,mean:Tensor,log_variance:Tensor,levels:tuple[float,...]=(0.5,0.8,0.9,0.95),)->dict[str,float]:
     normal=torch.distributions.Normal(0.0,1.0)
     standard_deviation=torch.exp(0.5*log_variance)
     output:dict[str,float]={}
@@ -61,7 +61,7 @@ def posterior_calibration(target:Tensor,mean:Tensor,log_variance:Tensor,levels:t
     output["standardized_residual_mean"]=float(z.mean().item())
     output["standardized_residual_std"]=float(z.std(unbiased=False).item())
     return output
-def localization_metrics(scores:Tensor,correct_indices:Tensor)->dict[str,float]:
+def localizationmetrics(scores:Tensor,correct_indices:Tensor)->dict[str,float]:
     if scores.ndim!=1:
         raise ValueError("scores must be one-dimensional")
     if correct_indices.numel()==0:

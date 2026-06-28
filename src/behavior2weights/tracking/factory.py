@@ -3,7 +3,7 @@ from behavior2weights.config import TrackingConfig
 from behavior2weights.tracking.aim import AimTracker
 from behavior2weights.tracking.base import ExperimentTracker
 from behavior2weights.tracking.jsonl import JsonlTracker
-def create_tracker(config:TrackingConfig,*,run_name:str|None=None)->ExperimentTracker|None:
+def createtracker(config:TrackingConfig,*,run_name:str|None=None)->ExperimentTracker|None:
     if not config.enabled or config.backend=="none":
         return None
     if config.backend=="jsonl":

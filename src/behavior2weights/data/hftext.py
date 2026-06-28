@@ -20,7 +20,7 @@ class HFTextDatasetConfig:
     max_validation_examples:int|None=None
     max_test_examples:int|None=None
 PRESETS:dict[str,HFTextDatasetConfig]={"tinystories_clean":HFTextDatasetConfig(dataset_name="karpathy/tinystories-gpt4-clean",tokenizer_name="gpt2",sequence_length=256,),"tinystories":HFTextDatasetConfig(dataset_name="roneneldan/TinyStories",tokenizer_name="gpt2",sequence_length=256,),"wikitext103":HFTextDatasetConfig(dataset_name="Salesforce/wikitext",dataset_config="wikitext-103-raw-v1",tokenizer_name="gpt2",sequence_length=256,),}
-def prepare_hf_causal_lm_dataset(config:HFTextDatasetConfig,output_directory:str|Path,*,overwrite:bool=False,)->Path:
+def preparehfcausallmdataset(config:HFTextDatasetConfig,output_directory:str|Path,*,overwrite:bool=False,)->Path:
     try:
         from datasets import DatasetDict,load_dataset,load_from_disk
         from transformers import AutoTokenizer

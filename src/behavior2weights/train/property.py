@@ -13,9 +13,9 @@ from behavior2weights.models.property import BehaviorPropertyClassifier,Property
 from behavior2weights.schemas import Split,TargetRecord
 from behavior2weights.traces.store import TraceBundle
 from behavior2weights.tracking.base import ExperimentTracker
-from behavior2weights.utils import seed_everything
+from behavior2weights.utils import seedeverything
 UNKNOWN="__UNKNOWN__"
-def property_value(record:TargetRecord,name:str)->str:
+def propertyvalue(record:TargetRecord,name:str)->str:
     if name=="architecture_id":
         return record.architecture_id
     if name=="family_id":
@@ -51,11 +51,11 @@ class PropertyVocabulary:
     def fit(cls,records:list[TargetRecord],properties:tuple[str,...])->PropertyVocabulary:
         values:dict[str,tuple[str,...]]={}
         for name in properties:
-            observed=sorted({property_value(record,name)for record in records})
+            observed=sorted({propertyvalue(record,name)for record in records})
             values[name]=tuple([UNKNOWN,*observed])
         return cls(values)
     def encode(self,record:TargetRecord,name:str)->int:
-        value=property_value(record,name)
+        value=propertyvalue(record,name)
         values=self.values[name]
         return values.index(value)if value in values else 0
     def decode(self,name:str,index:int)->str:
@@ -82,7 +82,7 @@ class TracePropertyCorpus:
         if not training_records:
             raise ValueError("property corpus contains no training records")
         self.vocabulary=vocabulary or PropertyVocabulary.fit(training_records,properties)
-    def indices_for_split(self,split:Split)->list[int]:
+    def indicesforsplit(self,split:Split)->list[int]:
         return[index for index,record in enumerate(self.records)if record.split==split]
     def batch(self,target_indices:list[int],*,query_indices:Tensor,)->dict[str,Any]:
         if not target_indices:
@@ -109,7 +109,7 @@ class PropertyTrainingConfig:
     seed:int=20260621
     device:str="cpu"
     @classmethod
-    def from_dict(cls,raw:dict[str,Any])->PropertyTrainingConfig:
+    def fromdict(cls,raw:dict[str,Any])->PropertyTrainingConfig:
         known={field.name for field in dataclasses.fields(cls)}
         unknown=set(raw)-known
         if unknown:
@@ -140,28 +140,28 @@ def _move(batch:dict[str,Any],device:torch.device)->dict[str,Any]:
     return{key:({name:value.to(device)for name,value in item.items()}if isinstance(item,dict)else item.to(device))for key,item in batch.items()}
 def _loss(logits:dict[str,Tensor],labels:dict[str,Tensor])->Tensor:
     return torch.stack([F.cross_entropy(logits[name],labels[name])for name in logits]).mean()
-def _lr_scale(step:int,config:PropertyTrainingConfig)->float:
+def lrscale(step:int,config:PropertyTrainingConfig)->float:
     if step<config.warmup_steps:
         return(step+1)/max(config.warmup_steps,1)
     progress=(step-config.warmup_steps)/max(config.steps-config.warmup_steps,1)
     return 0.5*(1+math.cos(math.pi*min(max(progress,0),1)))
-def save_property_checkpoint(model:BehaviorPropertyClassifier,vocabulary:PropertyVocabulary,directory:str|Path,metadata:dict[str,Any],)->Path:
+def savepropertycheckpoint(model:BehaviorPropertyClassifier,vocabulary:PropertyVocabulary,directory:str|Path,metadata:dict[str,Any],)->Path:
     directory=Path(directory)
     directory.mkdir(parents=True,exist_ok=True)
     path=directory/"property_model.safetensors"
     save_file({name:value.detach().cpu()for name,value in model.state_dict().items()},str(path))
-    (directory/"model_config.json").write_text(json.dumps(model.config.to_dict(),indent=2,sort_keys=True)+"\n")
+    (directory/"model_config.json").write_text(json.dumps(model.config.todict(),indent=2,sort_keys=True)+"\n")
     vocabulary.save(directory/"vocabulary.json")
     (directory/"metadata.json").write_text(json.dumps(metadata,indent=2,sort_keys=True)+"\n")
     return path
-def load_property_checkpoint(directory:str|Path,*,device:str="cpu")->tuple[BehaviorPropertyClassifier,PropertyVocabulary]:
+def loadpropertycheckpoint(directory:str|Path,*,device:str="cpu")->tuple[BehaviorPropertyClassifier,PropertyVocabulary]:
     directory=Path(directory)
-    config=PropertyModelConfig.from_dict(json.loads((directory/"model_config.json").read_text()))
+    config=PropertyModelConfig.fromdict(json.loads((directory/"model_config.json").read_text()))
     model=BehaviorPropertyClassifier(config)
     model.load_state_dict(load_file(str(directory/"property_model.safetensors"),device=device))
     return model.to(device),PropertyVocabulary.load(directory/"vocabulary.json")
-def train_property_classifier(model_config:PropertyModelConfig,corpus:TracePropertyCorpus,config:PropertyTrainingConfig,output_directory:str|Path,*,tracker:ExperimentTracker|None=None,)->PropertyTrainResult:
-    seed_everything(config.seed)
+def trainpropertyclassifier(model_config:PropertyModelConfig,corpus:TracePropertyCorpus,config:PropertyTrainingConfig,output_directory:str|Path,*,tracker:ExperimentTracker|None=None,)->PropertyTrainResult:
+    seedeverything(config.seed)
     device=torch.device(config.device)
     if model_config.property_dims!=corpus.vocabulary.dimensions:
         raise ValueError("model property dimensions do not match fitted vocabulary")
@@ -171,8 +171,8 @@ def train_property_classifier(model_config:PropertyModelConfig,corpus:TracePrope
     output_directory.mkdir(parents=True,exist_ok=True)
     model=BehaviorPropertyClassifier(model_config).to(device)
     optimizer=torch.optim.AdamW(model.parameters(),lr=config.learning_rate,weight_decay=config.weight_decay)
-    train_indices=corpus.indices_for_split(Split.TRAIN)
-    validation_indices=corpus.indices_for_split(Split.VALIDATION)or corpus.indices_for_split(Split.TEST)
+    train_indices=corpus.indicesforsplit(Split.TRAIN)
+    validation_indices=corpus.indicesforsplit(Split.VALIDATION)or corpus.indicesforsplit(Split.TEST)
     if not validation_indices:
         validation_indices=train_indices[:min(8,len(train_indices))]
     generator=torch.Generator().manual_seed(config.seed+1)
@@ -181,7 +181,7 @@ def train_property_classifier(model_config:PropertyModelConfig,corpus:TracePrope
     best_dir=output_directory/"best"
     history:list[dict[str,float]]=[]
     if tracker:
-        tracker.set_params({"training":dataclasses.asdict(config),"model":model_config.to_dict(),"property_vocabulary":corpus.vocabulary.values,"train_targets":len(train_indices),"validation_targets":len(validation_indices),"channel":corpus.traces.channel.value,})
+        tracker.setparams({"training":dataclasses.asdict(config),"model":model_config.todict(),"property_vocabulary":corpus.vocabulary.values,"train_targets":len(train_indices),"validation_targets":len(validation_indices),"channel":corpus.traces.channel.value,})
     try:
         for step in range(config.steps):
             model.train()
@@ -194,7 +194,7 @@ def train_property_classifier(model_config:PropertyModelConfig,corpus:TracePrope
             loss=_loss(logits,batch["labels"])
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(),1.0)
-            scale=_lr_scale(step,config)
+            scale=lrscale(step,config)
             for group in optimizer.param_groups:
                 group["lr"]=config.learning_rate*scale
             optimizer.step()
@@ -223,13 +223,13 @@ def train_property_classifier(model_config:PropertyModelConfig,corpus:TracePrope
             if validation_loss<best_loss:
                 best_loss=validation_loss
                 stale=0
-                save_property_checkpoint(model,corpus.vocabulary,best_dir,{"validation_loss":best_loss,"step":step,"history_tail":history[-20:],},)
+                savepropertycheckpoint(model,corpus.vocabulary,best_dir,{"validation_loss":best_loss,"step":step,"history_tail":history[-20:],},)
             else:
                 stale+=1
                 if stale>=config.early_stopping_patience:
                     break
         if not best_dir.exists():
-            save_property_checkpoint(model,corpus.vocabulary,best_dir,{"validation_loss":best_loss,"step":len(history)-1},)
+            savepropertycheckpoint(model,corpus.vocabulary,best_dir,{"validation_loss":best_loss,"step":len(history)-1},)
         (output_directory/"training_history.jsonl").write_text("".join(json.dumps(row,sort_keys=True)+"\n" for row in history))
         if tracker:
             tracker.close("completed")

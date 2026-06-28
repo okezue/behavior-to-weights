@@ -14,17 +14,17 @@ class AimTracker(ExperimentTracker):
         if run_name:
             self.run.name=run_name
         for tag in tags:
-            add_tag=getattr(self.run,"add_tag",None)
-            if callable(add_tag):
-                add_tag(str(tag))
+            addtag=getattr(self.run,"add_tag",None)
+            if callable(addtag):
+                addtag(str(tag))
             else:
                 self.run["tags"]=list(tags)
                 break
-    def set_params(self,params:dict[str,Any])->None:
+    def setparams(self,params:dict[str,Any])->None:
         self.run["params"]=params
     def track(self,value:float,*,name:str,step:int,context:dict[str,Any]|None=None,)->None:
         self.run.track(float(value),name=name,step=step,context=context or{})
-    def log_text(self,text:str,*,name:str,step:int=0)->None:
+    def logtext(self,text:str,*,name:str,step:int=0)->None:
         try:
             aim_module=importlib.import_module("aim")
             text_class=aim_module.Text

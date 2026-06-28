@@ -1,2 +1,2 @@
-from behavior2weights.analytic.softmax import(LinearSoftmaxExperimentConfig,recover_linear_softmax,run_linear_softmax_experiment,)
-__all__=["LinearSoftmaxExperimentConfig","recover_linear_softmax","run_linear_softmax_experiment",]
+from behavior2weights.analytic.softmax import(LinearSoftmaxExperimentConfig,recoverlinearsoftmax,runlinearsoftmaxexperiment,)
+__all__=["LinearSoftmaxExperimentConfig","recoverlinearsoftmax","runlinearsoftmaxexperiment",]

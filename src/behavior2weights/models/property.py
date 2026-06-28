@@ -9,12 +9,12 @@ class PropertyModelConfig:
     encoder:InverseModelConfig
     property_dims:dict[str,int]
     @classmethod
-    def from_dict(cls,raw:Mapping[str,Any])->PropertyModelConfig:
+    def fromdict(cls,raw:Mapping[str,Any])->PropertyModelConfig:
         data=dict(raw)
         dimensions={str(key):int(value)for key,value in data.pop("property_dims").items()}
-        encoder=InverseModelConfig.from_dict({**data,"property_dims":{}})
+        encoder=InverseModelConfig.fromdict({**data,"property_dims":{}})
         return cls(encoder=encoder,property_dims=dimensions)
-    def to_dict(self)->dict[str,Any]:
+    def todict(self)->dict[str,Any]:
         return{**dataclasses.asdict(self.encoder),"property_dims":self.property_dims}
 class BehaviorPropertyClassifier(nn.Module):
     def __init__(self,config:PropertyModelConfig)->None:

@@ -16,12 +16,12 @@ class TokenizerTrainingConfig:
     batch_size:int=1_000
     special_tokens:tuple[str,...]=("<|pad|>","<|unk|>","<|endoftext|>")
     @classmethod
-    def from_dict(cls,raw:dict[str,Any])->TokenizerTrainingConfig:
+    def fromdict(cls,raw:dict[str,Any])->TokenizerTrainingConfig:
         data=dict(raw)
         if "special_tokens" in data:
             data["special_tokens"]=tuple(data["special_tokens"])
         return cls(**data)
-def train_byte_bpe_tokenizer(config:TokenizerTrainingConfig,output_directory:str|Path,*,overwrite:bool=False,)->Path:
+def trainbytebpetokenizer(config:TokenizerTrainingConfig,output_directory:str|Path,*,overwrite:bool=False,)->Path:
     try:
         from datasets import load_dataset
         from tokenizers import Tokenizer,decoders,models,pre_tokenizers,trainers

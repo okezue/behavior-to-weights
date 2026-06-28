@@ -16,11 +16,11 @@ class JsonlTracker(ExperimentTracker):
     def _write(self,event:dict[str,Any])->None:
         self._handle.write(json.dumps(event,sort_keys=True,default=str)+"\n")
         self._handle.flush()
-    def set_params(self,params:dict[str,Any])->None:
+    def setparams(self,params:dict[str,Any])->None:
         self._write({"type":"params","params":params,"time":time.time()})
     def track(self,value:float,*,name:str,step:int,context:dict[str,Any]|None=None,)->None:
         self._write({"type":"metric","name":name,"value":float(value),"step":int(step),"context":context or{},"time":time.time(),})
-    def log_text(self,text:str,*,name:str,step:int=0)->None:
+    def logtext(self,text:str,*,name:str,step:int=0)->None:
         self._write({"type":"text","name":name,"text":text,"step":step,"time":time.time()})
     def close(self,status:str="completed")->None:
         if self._handle.closed:

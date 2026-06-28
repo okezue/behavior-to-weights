@@ -4,7 +4,7 @@ from collections.abc import Iterable,Sequence
 from pathlib import Path
 from typing import Any
 from behavior2weights.schemas import Split,TargetRecord
-from behavior2weights.utils import file_sha256,read_jsonl,stable_hash,write_jsonl
+from behavior2weights.utils import filesha256,readjsonl,stablehash,writejsonl
 @dataclasses.dataclass(frozen=True,slots=True)
 class SplitPolicy:
     train_fraction:float=0.70
@@ -18,15 +18,15 @@ class SplitPolicy:
             raise ValueError("train, validation, and test fractions must sum to one")
         if min(self.train_fraction,self.validation_fraction,self.test_fraction)<0:
             raise ValueError("split fractions cannot be negative")
-def _is_ood(record:TargetRecord,policy:SplitPolicy)->bool:
+def isood(record:TargetRecord,policy:SplitPolicy)->bool:
     for factor,values in policy.ood_factor_values.items():
         if str(record.factors.get(factor))in values:
             return True
     return False
-def assign_lineage_splits(records:Sequence[TargetRecord],policy:SplitPolicy|None=None)->list[TargetRecord]:
+def assignlineagesplits(records:Sequence[TargetRecord],policy:SplitPolicy|None=None)->list[TargetRecord]:
     policy=policy or SplitPolicy()
-    ood_lineages={record.lineage_id for record in records if _is_ood(record,policy)}
-    lineages=sorted({record.lineage_id for record in records if record.lineage_id not in ood_lineages},key=lambda value:stable_hash({"lineage":value,"salt":policy.salt},length=64),)
+    ood_lineages={record.lineage_id for record in records if isood(record,policy)}
+    lineages=sorted({record.lineage_id for record in records if record.lineage_id not in ood_lineages},key=lambda value:stablehash({"lineage":value,"salt":policy.salt},length=64),)
     count=len(lineages)
     validation_count=round(count*policy.validation_fraction)
     test_count=round(count*policy.test_fraction)
@@ -47,7 +47,7 @@ def assign_lineage_splits(records:Sequence[TargetRecord],policy:SplitPolicy|None
         mapping[lineage]=Split.TEST
     mapping.update({lineage:Split.OOD for lineage in ood_lineages})
     return[record.model_copy(update={"split":mapping[record.lineage_id]})for record in records]
-def validate_manifest(records:Sequence[TargetRecord],*,verify_files:bool=False)->None:
+def validatemanifest(records:Sequence[TargetRecord],*,verify_files:bool=False)->None:
     target_ids=[record.target_id for record in records]
     if len(target_ids)!=len(set(target_ids)):
         raise ValueError("target_id values must be unique")
@@ -59,18 +59,18 @@ def validate_manifest(records:Sequence[TargetRecord],*,verify_files:bool=False)-
         if verify_files:
             if not record.checkpoint_path.exists():
                 raise FileNotFoundError(record.checkpoint_path)
-            if(record.checkpoint_sha256 and file_sha256(record.checkpoint_path)!=record.checkpoint_sha256):
+            if(record.checkpoint_sha256 and filesha256(record.checkpoint_path)!=record.checkpoint_sha256):
                 raise ValueError(f"checksum mismatch for {record.checkpoint_path}")
-def save_manifest(records:Sequence[TargetRecord],path:str|Path)->None:
-    validate_manifest(records)
-    write_jsonl(path,[record.model_dump(mode="json")for record in records])
-def load_manifest(path:str|Path,*,resolve_paths:bool=True)->list[TargetRecord]:
+def savemanifest(records:Sequence[TargetRecord],path:str|Path)->None:
+    validatemanifest(records)
+    writejsonl(path,[record.model_dump(mode="json")for record in records])
+def loadmanifest(path:str|Path,*,resolve_paths:bool=True)->list[TargetRecord]:
     path=Path(path)
-    records=[TargetRecord.model_validate(row)for row in read_jsonl(path)]
+    records=[TargetRecord.model_validate(row)for row in readjsonl(path)]
     if resolve_paths:
         records=[record.model_copy(update={"checkpoint_path":record.checkpoint_path if record.checkpoint_path.is_absolute()else(path.parent/record.checkpoint_path).resolve()})for record in records]
-    validate_manifest(records)
+    validatemanifest(records)
     return records
-def manifest_summary(records:Iterable[TargetRecord])->dict[str,Any]:
+def manifestsummary(records:Iterable[TargetRecord])->dict[str,Any]:
     rows=list(records)
     return{"targets":len(rows),"lineages":len({row.lineage_id for row in rows}),"architectures":len({row.architecture_id for row in rows}),"families":sorted({row.family_id for row in rows}),"splits":{split.value:sum(row.split==split for row in rows)for split in Split},"tasks":sorted({row.task_id for row in rows}),"intervened_targets":sum(bool(row.interventions)for row in rows),}

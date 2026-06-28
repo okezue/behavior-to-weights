@@ -98,7 +98,7 @@ Files:
 
 - zoo: `configs/model_zoo/micro_confirmatory.yaml`;
 - experiment: `configs/experiments/tier1_micro.yaml`;
-- target model: `src/behavior2weights/models/micro_transformer.py`;
+- target model: `src/behavior2weights/models/microtransformer.py`;
 - zoo builder: `src/behavior2weights/zoo/micro.py`;
 - exact interventions: `src/behavior2weights/zoo/interventions.py`;
 - preflight projection: `artifacts/plans/micro-confirmatory.json`.
@@ -113,7 +113,7 @@ The executable pipeline trains a byte-level BPE tokenizer, packs immutable Huggi
 - prepared dataset: `configs/datasets/tinystories_clean_bpe2048.yaml`;
 - text-zoo pilot: `configs/model_zoo/text_tier2_pilot.yaml`;
 - experiment design: `configs/experiments/tier2_small.yaml`;
-- tokenizer/data code: `src/behavior2weights/data/tokenizer.py`, `hf_text.py`;
+- tokenizer/data code: `src/behavior2weights/data/tokenizer.py`, `hftext.py`;
 - target training: `src/behavior2weights/zoo/text.py`.
 
 The checked-in 32-lineage/192-target configuration is a pipeline and variance pilot. Confirmatory Tier 2 requires at least 512 lineages across at least eight architecture×corpus strata and at least 144 evaluable test lineages. Each corpus is prepared and frozen separately; coordinate decoders are trained only within shape-compatible architecture families.
@@ -183,7 +183,7 @@ Implementation:
 - codecs: `src/behavior2weights/traces/observations.py`;
 - collection: `src/behavior2weights/traces/collector.py`;
 - immutable storage: `src/behavior2weights/traces/store.py`;
-- validator: `scripts/validate_artifacts.py`.
+- validator: `scripts/validateartifacts.py`.
 
 ## 8. Inverse model
 
@@ -202,7 +202,7 @@ Files:
 
 - inverse model: `src/behavior2weights/models/inverse.py`;
 - property model: `src/behavior2weights/models/property.py`;
-- weight address space: `src/behavior2weights/models/weight_space.py`;
+- weight address space: `src/behavior2weights/models/weightspace.py`;
 - coordinate corpus: `src/behavior2weights/train/corpus.py`;
 - trainers: `src/behavior2weights/train/inverse.py`, `property.py`.
 
@@ -296,7 +296,7 @@ Implementation:
 
 - inference: `src/behavior2weights/stats/inference.py`;
 - power: `src/behavior2weights/stats/power.py`;
-- result aggregation: `scripts/aggregate_results.py`;
+- result aggregation: `scripts/aggregateresults.py`;
 - full rules: `docs/STATISTICAL_ANALYSIS_PLAN.md`.
 
 ## 14. Generalization claims

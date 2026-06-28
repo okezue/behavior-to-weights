@@ -1,7 +1,7 @@
 from __future__ import annotations
 import dataclasses
 from collections.abc import Callable,Mapping,Sequence
-from typing import cast
+from typing import Any,cast
 import torch
 from torch import Tensor,nn
 from torch.nn import functional as F
@@ -18,7 +18,7 @@ class ObservationConfig:
     sketch_seed:int=17
     center_logits:bool=True
     @classmethod
-    def from_dict(cls,raw:Mapping[str,object],*,vocab_size:int,)->ObservationConfig:
+    def fromdict(cls,raw:Mapping[str,object],*,vocab_size:int,)->ObservationConfig:
         data=dict(raw)
         channel_value=data.pop("name",data.pop("channel",ObservationChannel.LOGITS.value))
         channel=ObservationChannel(str(channel_value))
@@ -37,7 +37,7 @@ class ObservationConfig:
                 data["feature_dim"]=min(vocab_size,512)
             else:
                 data["feature_dim"]=vocab_size
-        return cls(channel=channel,vocab_size=vocab_size,**data)
+        return cls(channel=channel,vocab_size=vocab_size,**cast(dict[str,Any],data))
     def __post_init__(self)->None:
         if self.vocab_size<=0 or self.feature_dim<=0:
             raise ValueError("vocab_size and feature_dim must be positive")
@@ -53,17 +53,17 @@ class ObservationConfig:
             raise ValueError("top-k observations require feature_dim >= 2 * topk")
         if self.channel==ObservationChannel.LOGITS and self.vocab_size>self.feature_dim:
             raise ValueError("full-logit observations require feature_dim >= vocab_size; use logit_sketch " "for dimensionality reduction")
-def _pad_or_truncate(values:Tensor,width:int)->Tensor:
+def padortruncate(values:Tensor,width:int)->Tensor:
     if values.shape[-1]==width:
         return values
     if values.shape[-1]>width:
         return values[...,:width]
     return F.pad(values,(0,width-values.shape[-1]))
-def sketch_matrix(config:ObservationConfig,*,device:torch.device,dtype:torch.dtype)->Tensor:
+def sketchmatrix(config:ObservationConfig,*,device:torch.device,dtype:torch.dtype)->Tensor:
     generator=torch.Generator(device=device).manual_seed(config.sketch_seed)
     matrix=torch.randn(config.vocab_size,config.sketch_dim,generator=generator,device=device,dtype=dtype,)
     return cast(Tensor,matrix/config.sketch_dim**0.5)
-def encode_logits(logits:Tensor,config:ObservationConfig,*,generator:torch.Generator|None=None,)->tuple[Tensor,dict[str,Tensor]]:
+def encodelogits(logits:Tensor,config:ObservationConfig,*,generator:torch.Generator|None=None,)->tuple[Tensor,dict[str,Tensor]]:
     if logits.ndim!=2 or logits.shape[-1]!=config.vocab_size:
         raise ValueError(f"logits must have shape [batch, {config.vocab_size}], got {tuple(logits.shape)}")
     scaled=logits.float()/config.temperature
@@ -92,12 +92,12 @@ def encode_logits(logits:Tensor,config:ObservationConfig,*,generator:torch.Gener
         observation/=config.sample_count
         metadata["output_ids"]=sampled
     elif config.channel==ObservationChannel.LOGIT_SKETCH:
-        observation=centered@sketch_matrix(config,device=centered.device,dtype=centered.dtype)
+        observation=centered@sketchmatrix(config,device=centered.device,dtype=centered.dtype)
     else:
         raise ValueError(f"Unsupported observation channel: {config.channel}")
-    return _pad_or_truncate(observation,config.feature_dim),metadata
+    return padortruncate(observation,config.feature_dim),metadata
 @torch.no_grad()
-def collect_observations(model:nn.Module,input_ids:Tensor,config:ObservationConfig,*,batch_size:int=128,device:str|torch.device="cpu",seed:int=0,row_seeds:Sequence[int]|Tensor|None=None,logits_selector:Callable[[Tensor],Tensor]|None=None,)->tuple[Tensor,dict[str,Tensor]]:
+def collectobservations(model:nn.Module,input_ids:Tensor,config:ObservationConfig,*,batch_size:int=128,device:str|torch.device="cpu",seed:int=0,row_seeds:Sequence[int]|Tensor|None=None,logits_selector:Callable[[Tensor],Tensor]|None=None,)->tuple[Tensor,dict[str,Tensor]]:
     if input_ids.ndim!=2:
         raise ValueError("input_ids must have shape [queries, sequence]")
     model=model.to(device)
@@ -121,13 +121,13 @@ def collect_observations(model:nn.Module,input_ids:Tensor,config:ObservationConf
             raise TypeError("model output must be a Tensor, tuple containing a Tensor, or have .logits")
         logits=logits_selector(output)if logits_selector else output[:,-1,:]
         if row_seeds is None:
-            encoded,metadata=encode_logits(logits,config,generator=generator)
+            encoded,metadata=encodelogits(logits,config,generator=generator)
         else:
             encoded_rows:list[Tensor]=[]
             metadata_rows:dict[str,list[Tensor]]={}
             for local_index in range(logits.shape[0]):
                 row_generator=torch.Generator(device=generator_device).manual_seed(row_seeds[start+local_index])
-                row_encoded,row_metadata=encode_logits(logits[local_index:local_index+1],config,generator=row_generator,)
+                row_encoded,row_metadata=encodelogits(logits[local_index:local_index+1],config,generator=row_generator,)
                 encoded_rows.append(row_encoded)
                 for key,value in row_metadata.items():
                     metadata_rows.setdefault(key,[]).append(value)

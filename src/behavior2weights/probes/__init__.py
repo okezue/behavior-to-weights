@@ -1,2 +1,2 @@
-from behavior2weights.probes.query_bank import QueryBankConfig,build_query_bank
-__all__=["QueryBankConfig","build_query_bank"]
+from behavior2weights.probes.querybank import QueryBankConfig,buildquerybank
+__all__=["QueryBankConfig","buildquerybank"]

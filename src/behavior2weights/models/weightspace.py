@@ -55,7 +55,7 @@ class AddressSpace:
         self._offsets=torch.tensor([spec.offset for spec in self.specs],dtype=torch.long)
         self._ends=torch.tensor([spec.offset+spec.length for spec in self.specs],dtype=torch.long)
     @classmethod
-    def from_state_dict(cls,state_dict:Mapping[str,Tensor])->AddressSpace:
+    def fromstatedict(cls,state_dict:Mapping[str,Tensor])->AddressSpace:
         specs:list[TensorSpec]=[]
         offset=0
         tensor_id=0
@@ -64,16 +64,16 @@ class AddressSpace:
                 continue
             shape=tuple(int(value)for value in tensor.shape)
             length=math.prod(shape)
-            specs.append(TensorSpec(name=name,shape=shape,role=infer_parameter_role(name),layer=infer_layer(name),tensor_id=tensor_id,offset=offset,length=length,))
+            specs.append(TensorSpec(name=name,shape=shape,role=inferparameterrole(name),layer=inferlayer(name),tensor_id=tensor_id,offset=offset,length=length,))
             offset+=length
             tensor_id+=1
         return cls(specs)
     @classmethod
-    def from_json(cls,path:str|Path)->AddressSpace:
+    def fromjson(cls,path:str|Path)->AddressSpace:
         raw=json.loads(Path(path).read_text())
         specs=[TensorSpec(name=item["name"],shape=tuple(item["shape"]),role=ParameterRole(item["role"]),layer=item["layer"],tensor_id=item["tensor_id"],offset=item["offset"],length=item["length"],)for item in raw["specs"]]
         return cls(specs)
-    def to_json(self,path:str|Path)->None:
+    def tojson(self,path:str|Path)->None:
         path=Path(path)
         path.parent.mkdir(parents=True,exist_ok=True)
         path.write_text(json.dumps({"total_parameters":self.total_parameters,"specs":[{**dataclasses.asdict(spec),"role":int(spec.role),"shape":list(spec.shape),}for spec in self.specs],},indent=2,sort_keys=True,)+"\n")
@@ -97,7 +97,7 @@ class AddressSpace:
                 value=value.to(dtype=template[spec.name].dtype,device=template[spec.name].device)
             state[spec.name]=value
         return state
-    def sample_indices(self,count:int,*,generator:torch.Generator|None=None,stratified_by_role:bool=True,)->Tensor:
+    def sampleindices(self,count:int,*,generator:torch.Generator|None=None,stratified_by_role:bool=True,)->Tensor:
         if count<=0:
             raise ValueError("count must be positive")
         if not stratified_by_role or count<len(self.specs):
@@ -130,7 +130,7 @@ class AddressSpace:
         for address,tensor_position in zip(flat_indices.tolist(),tensor_positions.tolist(),strict=True):
             spec=self.specs[tensor_position]
             local_index=address-spec.offset
-            coordinates=unravel_index(local_index,spec.shape)
+            coordinates=unravelindex(local_index,spec.shape)
             padded_shape=list(spec.shape[:2])+[1,1]
             padded_coords=list(coordinates[:2])+[0,0]
             row_denominator=max(padded_shape[0]-1,1)
@@ -141,12 +141,12 @@ class AddressSpace:
             continuous.append([local_index/max(spec.length-1,1),padded_coords[0]/row_denominator,padded_coords[1]/col_denominator,math.log1p(spec.length)/20.0,math.log1p(padded_shape[0])/12.0,math.log1p(padded_shape[1])/12.0,min(spec.rank,4)/4.0,address/max(self.total_parameters-1,1),])
         original_shape=tuple(indices.shape)
         return{"tensor_id":torch.tensor(tensor_ids,dtype=torch.long).reshape(original_shape),"role_id":torch.tensor(roles,dtype=torch.long).reshape(original_shape),"layer_id":torch.tensor(layers,dtype=torch.long).reshape(original_shape),"continuous":torch.tensor(continuous,dtype=torch.float32).reshape(*original_shape,8),}
-    def role_ids_for_all(self)->Tensor:
+    def roleidsforall(self)->Tensor:
         role_ids=torch.empty(self.total_parameters,dtype=torch.long)
         for spec in self.specs:
             role_ids[spec.offset:spec.offset+spec.length]=int(spec.role)
         return role_ids
-    def indices_for_tensor(self,name:str)->Tensor:
+    def indicesfortensor(self,name:str)->Tensor:
         for spec in self.specs:
             if spec.name==name:
                 return torch.arange(spec.offset,spec.offset+spec.length)
@@ -176,7 +176,7 @@ class WeightStandardizer:
     def transform(self,values:Tensor,role_ids:Tensor)->Tensor:
         means,scales=self._lookup(role_ids,values.device,values.dtype)
         return(values-means)/scales
-    def inverse_transform(self,values:Tensor,role_ids:Tensor)->Tensor:
+    def inversetransform(self,values:Tensor,role_ids:Tensor)->Tensor:
         means,scales=self._lookup(role_ids,values.device,values.dtype)
         return values*scales+means
     def _lookup(self,role_ids:Tensor,device:torch.device,dtype:torch.dtype)->tuple[Tensor,Tensor]:
@@ -196,17 +196,17 @@ class WeightStandardizer:
     def load(cls,path:str|Path)->WeightStandardizer:
         raw=json.loads(Path(path).read_text())
         return cls(means={int(key):float(value)for key,value in raw["means"].items()},scales={int(key):float(value)for key,value in raw["scales"].items()},epsilon=float(raw.get("epsilon",1e-6)),)
-def infer_parameter_role(name:str)->ParameterRole:
+def inferparameterrole(name:str)->ParameterRole:
     if "ln" in name or "norm" in name:
         return ParameterRole.NORM_BIAS if name.endswith("bias")else ParameterRole.NORM_WEIGHT
     for suffix,role in ROLE_PATTERNS:
         if name.endswith(suffix):
             return role
     return ParameterRole.OTHER
-def infer_layer(name:str)->int:
+def inferlayer(name:str)->int:
     match=re.search(r"(?:blocks|layers|h)\.(\d+)\.",name)
     return int(match.group(1))if match else-1
-def unravel_index(index:int,shape:tuple[int,...])->tuple[int,...]:
+def unravelindex(index:int,shape:tuple[int,...])->tuple[int,...]:
     if not shape:
         return()
     coordinates=[0]*len(shape)

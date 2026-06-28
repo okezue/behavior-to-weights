@@ -24,7 +24,7 @@ class SyntheticDatasetConfig:
             raise ValueError("all split sizes must be positive")
 def _generator(seed:int)->torch.Generator:
     return torch.Generator().manual_seed(seed)
-def _markov_sequences(config:SyntheticDatasetConfig,count:int,seed:int)->Tensor:
+def markovsequences(config:SyntheticDatasetConfig,count:int,seed:int)->Tensor:
     generator=_generator(seed)
     transition_logits=torch.randn(config.vocab_size,config.vocab_size,generator=generator)
     transition_logits+=2.5*torch.eye(config.vocab_size)
@@ -35,7 +35,7 @@ def _markov_sequences(config:SyntheticDatasetConfig,count:int,seed:int)->Tensor:
         row_probabilities=probabilities[result[:,position-1]]
         result[:,position]=torch.multinomial(row_probabilities,1,generator=generator).squeeze(1)
     return result
-def _copy_sequences(config:SyntheticDatasetConfig,count:int,seed:int)->Tensor:
+def copysequences(config:SyntheticDatasetConfig,count:int,seed:int)->Tensor:
     generator=_generator(seed)
     delimiter=config.vocab_size-1
     usable=config.vocab_size-1
@@ -49,7 +49,7 @@ def _copy_sequences(config:SyntheticDatasetConfig,count:int,seed:int)->Tensor:
             sequence=torch.cat([sequence,padding])
         rows.append(sequence)
     return torch.stack(rows)
-def _induction_sequences(config:SyntheticDatasetConfig,count:int,seed:int)->Tensor:
+def inductionsequences(config:SyntheticDatasetConfig,count:int,seed:int)->Tensor:
     generator=_generator(seed)
     result=torch.randint(config.vocab_size,(count,config.seq_len),generator=generator)
     for row in range(count):
@@ -62,7 +62,7 @@ def _induction_sequences(config:SyntheticDatasetConfig,count:int,seed:int)->Tens
         result[row,second_position]=key
         result[row,second_position+1]=value
     return result
-def _modular_addition_sequences(config:SyntheticDatasetConfig,count:int,seed:int)->Tensor:
+def modularadditionsequences(config:SyntheticDatasetConfig,count:int,seed:int)->Tensor:
     generator=_generator(seed)
     modulus=max(4,config.vocab_size-4)
     plus_token=config.vocab_size-4
@@ -77,16 +77,16 @@ def _modular_addition_sequences(config:SyntheticDatasetConfig,count:int,seed:int
             tokens.extend([a,plus_token,b,equals_token,(a+b)%modulus,separator_token])
         rows.append(torch.tensor(tokens[:config.seq_len],dtype=torch.long))
     return torch.stack(rows)
-def generate_sequences(config:SyntheticDatasetConfig,count:int,*,seed:int|None=None,)->Tensor:
+def generatesequences(config:SyntheticDatasetConfig,count:int,*,seed:int|None=None,)->Tensor:
     seed=config.seed if seed is None else seed
     if config.task=="markov":
-        return _markov_sequences(config,count,seed)
+        return markovsequences(config,count,seed)
     if config.task=="copy":
-        return _copy_sequences(config,count,seed)
+        return copysequences(config,count,seed)
     if config.task=="induction":
-        return _induction_sequences(config,count,seed)
+        return inductionsequences(config,count,seed)
     if config.task=="modular_addition":
-        return _modular_addition_sequences(config,count,seed)
+        return modularadditionsequences(config,count,seed)
     if config.task=="mixture":
         tasks:tuple[SyntheticTask,...]=("markov","copy","induction","modular_addition")
         sizes=[count//len(tasks)]*len(tasks)
@@ -95,12 +95,12 @@ def generate_sequences(config:SyntheticDatasetConfig,count:int,*,seed:int|None=N
         chunks:list[Tensor]=[]
         for index,(task,size)in enumerate(zip(tasks,sizes,strict=True)):
             sub_config=dataclasses.replace(config,task=task)
-            chunks.append(generate_sequences(sub_config,size,seed=seed+10_003*(index+1)))
+            chunks.append(generatesequences(sub_config,size,seed=seed+10_003*(index+1)))
         merged=torch.cat(chunks)
         return merged[torch.randperm(count,generator=_generator(seed+77))]
     raise ValueError(f"Unknown synthetic task: {config.task}")
-def build_splits(config:SyntheticDatasetConfig)->dict[str,Tensor]:
-    return{"train":generate_sequences(config,config.train_examples,seed=config.seed),"validation":generate_sequences(config,config.validation_examples,seed=config.seed+1_000_003),"test":generate_sequences(config,config.test_examples,seed=config.seed+2_000_003),}
+def buildsplits(config:SyntheticDatasetConfig)->dict[str,Tensor]:
+    return{"train":generatesequences(config,config.train_examples,seed=config.seed),"validation":generatesequences(config,config.validation_examples,seed=config.seed+1_000_003),"test":generatesequences(config,config.test_examples,seed=config.seed+2_000_003),}
 class SequenceBatcher:
     def __init__(self,sequences:Tensor,batch_size:int,*,shuffle:bool=True,seed:int=0,)->None:
         if sequences.ndim!=2:
