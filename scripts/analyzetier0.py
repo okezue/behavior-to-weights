@@ -5,24 +5,28 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 def load(path):
-    rows=[json.loads(l)for l in Path(path).read_text().splitlines()if l.strip()]
+    rows=[json.loads(ln)for ln in Path(path).read_text().splitlines()if ln.strip()]
     df=pd.DataFrame(rows)
     df["augmented_dim"]=df["input_dim"]+1
     df["enough_queries"]=df["query_count"]>=df["augmented_dim"]
     return df
 def md(df,fmt="{:.4g}"):
-    if not isinstance(df.index,pd.RangeIndex):df=df.reset_index()
+    if not isinstance(df.index,pd.RangeIndex):
+        df=df.reset_index()
     def c(v):
-        if isinstance(v,float):return fmt.format(v)
+        if isinstance(v,float):
+            return fmt.format(v)
         return str(v)
     head="| "+" | ".join(map(str,df.columns))+" |"
     sep="| "+" | ".join("---" for _ in df.columns)+" |"
     body=["| "+" | ".join(c(v)for v in row)+" |" for row in df.itertuples(index=False)]
     return "\n".join([head,sep,*body])
 def slope(x,y):
-    x=np.log(np.asarray(x,float));y=np.log(np.asarray(y,float))
+    x=np.log(np.asarray(x,float))
+    y=np.log(np.asarray(y,float))
     m=np.isfinite(x)&np.isfinite(y)
-    if m.sum()<2:return float("nan")
+    if m.sum()<2:
+        return float("nan")
     return float(np.polyfit(x[m],y[m],1)[0])
 def main():
     ap=argparse.ArgumentParser()
@@ -34,7 +38,7 @@ def main():
     prob=df[df.observation_channel=="probabilities"]
     samp=df[df.observation_channel=="samples"]
     L=[]
-    L.append(f"# Tier-0 analytic identifiability\n")
+    L.append("# Tier-0 analytic identifiability\n")
     L.append(f"{n} systems, {df.system_id.nunique()} unique, channels={sorted(df.observation_channel.unique())}\n")
     thr=df.groupby(["query_strategy","input_dim","query_count"]).full_rank.mean().reset_index()
     L.append("## Identifiability threshold (full-rank rate)\n")

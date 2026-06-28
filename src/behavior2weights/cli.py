@@ -125,7 +125,7 @@ def buildprobes(config:Annotated[Path,typer.Option(exists=True)],output:Annotate
     typer.echo(str(output))
 @probes_app.command("build-hf")
 def buildhfprobes(prompts:Annotated[Path,typer.Option(exists=True,readable=True)],output:Annotated[Path,typer.Option()],tokenizer:Annotated[str,typer.Option(help="Pinned tokenizer name or local path.")],revision:Annotated[str|None,typer.Option()]=None,sequence_length:Annotated[int,typer.Option(min=2)]=128,text_field:Annotated[str,typer.Option()]="text",local_files_only:Annotated[bool,typer.Option()]=False,)->None:
-    records=buildhfquerybank(prompts,output,tokenizer_name=tokenizer,revision=revision,sequence_length=sequence_length,text_field=text_field,local_files_only=local_files_only,)
+    buildhfquerybank(prompts,output,tokenizer_name=tokenizer,revision=revision,sequence_length=sequence_length,text_field=text_field,local_files_only=local_files_only,)
     typer.echo(str(output))
 @traces_app.command("collect-micro")
 def collectmicrotraces(manifest:Annotated[Path,typer.Option(exists=True)],queries:Annotated[Path,typer.Option(exists=True)],output:Annotated[Path,typer.Option()],channel:Annotated[ObservationChannel,typer.Option()]=ObservationChannel.LOGITS,feature_dim:Annotated[int|None,typer.Option(min=1)]=None,topk:Annotated[int,typer.Option(min=1)]=8,sample_count:Annotated[int,typer.Option(min=1)]=32,temperature:Annotated[float,typer.Option(min=0.000001)]=1.0,sketch_dim:Annotated[int,typer.Option(min=1)]=16,sketch_seed:Annotated[int,typer.Option()]=17,center_logits:Annotated[bool,typer.Option()]=True,batch_size:Annotated[int,typer.Option(min=1)]=128,base_seed:Annotated[int,typer.Option()]=0,device:Annotated[str,typer.Option()]="cpu",)->None:
@@ -138,7 +138,7 @@ def collectmicrotraces(manifest:Annotated[Path,typer.Option(exists=True)],querie
     default_feature_dim=(sketch_dim if channel==ObservationChannel.LOGIT_SKETCH else(2*min(topk,vocab_size)if channel==ObservationChannel.TOPK else vocab_size))
     observation=ObservationConfig(channel=channel,vocab_size=vocab_size,feature_dim=feature_dim or default_feature_dim,topk=min(topk,vocab_size),sample_count=sample_count,temperature=temperature,sketch_dim=sketch_dim,sketch_seed=sketch_seed,center_logits=center_logits,)
     adapter=MicroTransformerAdapter(manifest_root=manifest.parent)
-    bundle=collecttargettraces(records,query_records,adapter.load,observation,CollectionConfig(batch_size=batch_size,device=device,base_seed=base_seed),output_directory=output,)
+    collecttargettraces(records,query_records,adapter.load,observation,CollectionConfig(batch_size=batch_size,device=device,base_seed=base_seed),output_directory=output,)
     typer.echo(str(output))
 @traces_app.command("collect-micro-suite")
 def collectmicrotracesuite(manifest:Annotated[Path,typer.Option(exists=True)],queries:Annotated[Path,typer.Option(exists=True)],experiment:Annotated[Path,typer.Option(exists=True,readable=True)],output:Annotated[Path,typer.Option()],batch_size:Annotated[int,typer.Option(min=1)]=128,base_seed:Annotated[int,typer.Option()]=0,device:Annotated[str,typer.Option()]="cpu",)->None:
@@ -175,7 +175,7 @@ def collecthftraces(manifest:Annotated[Path,typer.Option(exists=True)],queries:A
         raise typer.BadParameter("selected targets use multiple tokenizers; collect each tokenizer family separately")
     query_records=[QueryRecord.model_validate(row)for row in readjsonl(queries)]
     adapter=HuggingFaceCausalLMAdapter(manifest_root=manifest.parent,local_files_only=local_files_only)
-    bundle=collecttargettraces(records,query_records,adapter.load,ObservationConfig(channel=channel,vocab_size=vocab_size,feature_dim=feature_dim or(sketch_dim if channel==ObservationChannel.LOGIT_SKETCH else(2*min(topk,vocab_size)if channel==ObservationChannel.TOPK else(min(vocab_size,512)if channel in{ObservationChannel.TOKENS,ObservationChannel.SAMPLE_HISTOGRAM}else vocab_size))),topk=min(topk,vocab_size),sample_count=sample_count,temperature=temperature,sketch_dim=sketch_dim,sketch_seed=sketch_seed,center_logits=center_logits,),CollectionConfig(batch_size=batch_size,device=device,base_seed=base_seed,fail_fast=fail_fast),output_directory=output,)
+    collecttargettraces(records,query_records,adapter.load,ObservationConfig(channel=channel,vocab_size=vocab_size,feature_dim=feature_dim or(sketch_dim if channel==ObservationChannel.LOGIT_SKETCH else(2*min(topk,vocab_size)if channel==ObservationChannel.TOPK else(min(vocab_size,512)if channel in{ObservationChannel.TOKENS,ObservationChannel.SAMPLE_HISTOGRAM}else vocab_size))),topk=min(topk,vocab_size),sample_count=sample_count,temperature=temperature,sketch_dim=sketch_dim,sketch_seed=sketch_seed,center_logits=center_logits,),CollectionConfig(batch_size=batch_size,device=device,base_seed=base_seed,fail_fast=fail_fast),output_directory=output,)
     typer.echo(str(output))
 @train_app.command("inverse")
 def traininverse(manifest:Annotated[Path,typer.Option(exists=True)],traces:Annotated[Path,typer.Option(exists=True)],config:Annotated[Path,typer.Option(exists=True)],output:Annotated[Path,typer.Option()],architecture_id:Annotated[str|None,typer.Option()]=None,tracking_config:Annotated[Path|None,typer.Option("--tracking-config",exists=True)]=None,run_name:Annotated[str,typer.Option()]="inverse",seed:Annotated[int|None,typer.Option()]=None,device:Annotated[str|None,typer.Option()]=None,)->None:
@@ -236,14 +236,14 @@ def evaluatemicro(manifest:Annotated[Path,typer.Option(exists=True)],traces:Anno
     parsed_budgets=tuple(int(value)for value in budgets.split(",")if value.strip())
     parsed_policies=tuple(value.strip()for value in query_policies.split(",")if value.strip())
     parsed_splits=tuple(Split(value.strip())for value in splits.split(",")if value.strip())
-    rows=evaluatemicroinverse(manifest_path=manifest,traces_directory=traces,checkpoint_directory=checkpoint,output_path=output,architecture_id=architecture_id,config=EvaluationConfig(query_budgets=parsed_budgets,query_policies=parsed_policies,splits=parsed_splits,functional_examples=functional_examples,tier=tier,run_id=run_id,replicate=replicate,seed=seed,),device=device,)
+    evaluatemicroinverse(manifest_path=manifest,traces_directory=traces,checkpoint_directory=checkpoint,output_path=output,architecture_id=architecture_id,config=EvaluationConfig(query_budgets=parsed_budgets,query_policies=parsed_policies,splits=parsed_splits,functional_examples=functional_examples,tier=tier,run_id=run_id,replicate=replicate,seed=seed,),device=device,)
     typer.echo(str(output))
 @eval_app.command("properties")
 def evaluateproperties(manifest:Annotated[Path,typer.Option(exists=True)],traces:Annotated[Path,typer.Option(exists=True)],checkpoint:Annotated[Path,typer.Option(exists=True)],output:Annotated[Path,typer.Option()],budgets:Annotated[str,typer.Option()]="16,32,64",query_policies:Annotated[str,typer.Option()]="random,population_disagreement",splits:Annotated[str,typer.Option()]="test,ood",tier:Annotated[str,typer.Option()]="tier2",run_id:Annotated[str,typer.Option()]="property-evaluation",replicate:Annotated[int,typer.Option(min=0)]=0,seed:Annotated[int,typer.Option()]=20260621,device:Annotated[str,typer.Option()]="cpu",)->None:
     parsed_budgets=tuple(int(value)for value in budgets.split(",")if value.strip())
     parsed_policies=tuple(value.strip()for value in query_policies.split(",")if value.strip())
     parsed_splits=tuple(Split(value.strip())for value in splits.split(",")if value.strip())
-    rows=evaluatepropertyclassifier(manifest_path=manifest,traces_directory=traces,checkpoint_directory=checkpoint,output_path=output,query_budgets=parsed_budgets,query_policies=parsed_policies,splits=parsed_splits,tier=tier,run_id=run_id,replicate=replicate,seed=seed,device=device,)
+    evaluatepropertyclassifier(manifest_path=manifest,traces_directory=traces,checkpoint_directory=checkpoint,output_path=output,query_budgets=parsed_budgets,query_policies=parsed_policies,splits=parsed_splits,tier=tier,run_id=run_id,replicate=replicate,seed=seed,device=device,)
     typer.echo(str(output))
 @stats_app.command("power")
 def power(effect:Annotated[float,typer.Option(help="Standardized paired effect size.")],icc:Annotated[float,typer.Option()]=0.5,checkpoints:Annotated[int,typer.Option()]=1,lineages:Annotated[int,typer.Option()]=80,simulations:Annotated[int,typer.Option()]=5_000,)->None:
