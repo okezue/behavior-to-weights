@@ -1,0 +1,12 @@
+dataset:
+  dataset_name: karpathy/tinystories-gpt4-clean
+  dataset_config: null
+  text_column: text
+  tokenizer_name: data/tokenizers/tinystories-bpe-2048
+  sequence_length: 256
+  train_split: train
+  validation_split: validation
+  test_split: test
+  num_proc: 8
+  revision: null
+  tokenizer_revision: null

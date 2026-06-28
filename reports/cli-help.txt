@@ -1,0 +1,24 @@
+                                                                                
+ Usage: b2w [OPTIONS] COMMAND [ARGS]...                                         
+                                                                                
+ Behavior-to-Weights experimental system.                                       
+                                                                                
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --install-completion          Install completion for the current shell.      │
+│ --show-completion             Show completion for the current shell, to copy │
+│                               it or customize the installation.              │
+│ --help                        Show this message and exit.                    │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ doctor    Print the resolved runtime and optional dependency status.         │
+│ smoke     Run a CPU-sized end-to-end validation experiment.                  │
+│ zoo       Create and inspect target-model zoos.                              │
+│ traces    Collect black-box behavior traces.                                 │
+│ probes    Create candidate query banks.                                      │
+│ train     Train inverse models.                                              │
+│ data      Prepare public and synthetic datasets.                             │
+│ stats     Power and inferential statistics utilities.                        │
+│ evaluate  Run locked target-level evaluations.                               │
+│ analytic  Run analytic identifiability experiments.                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+

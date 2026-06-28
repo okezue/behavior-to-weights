@@ -1,0 +1,30 @@
+{
+  "jobDefinitionName": "behavior-to-weights-gpu",
+  "type": "container",
+  "platformCapabilities": ["EC2"],
+  "containerProperties": {
+    "image": "ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/behavior-to-weights:COMMIT_SHA",
+    "vcpus": 16,
+    "memory": 122880,
+    "resourceRequirements": [{"type": "GPU", "value": "1"}],
+    "command": ["Ref::command"],
+    "jobRoleArn": "arn:aws:iam::ACCOUNT_ID:role/B2WBatchJobRole",
+    "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/B2WBatchExecutionRole",
+    "environment": [
+      {"name": "B2W_ARTIFACT_ROOT", "value": "s3://BUCKET/behavior-to-weights"},
+      {"name": "HF_HOME", "value": "/scratch/huggingface"}
+    ],
+    "mountPoints": [{"sourceVolume": "scratch", "containerPath": "/scratch", "readOnly": false}],
+    "volumes": [{"name": "scratch", "host": {"sourcePath": "/local-scratch"}}],
+    "linuxParameters": {"sharedMemorySize": 32768},
+    "logConfiguration": {"logDriver": "awslogs"}
+  },
+  "retryStrategy": {
+    "attempts": 2,
+    "evaluateOnExit": [
+      {"onStatusReason": "Host EC2*", "action": "RETRY"},
+      {"onReason": "OutOfMemoryError", "action": "EXIT"}
+    ]
+  },
+  "timeout": {"attemptDurationSeconds": 259200}
+}

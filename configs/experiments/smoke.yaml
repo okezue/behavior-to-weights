@@ -1,0 +1,11 @@
+name: smoke
+purpose: execution-validation-only
+query_bank:
+  vocab_size: 16
+  seq_len: 7
+  random_queries: 16
+  natural_queries: 16
+  seed: 303
+include: [random, natural]
+channels: [logits]
+query_budgets: [8, 16]

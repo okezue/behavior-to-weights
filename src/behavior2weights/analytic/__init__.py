@@ -1,0 +1,13 @@
+"""Analytic and simulated identifiability experiments."""
+
+from behavior2weights.analytic.softmax import (
+    LinearSoftmaxExperimentConfig,
+    recover_linear_softmax,
+    run_linear_softmax_experiment,
+)
+
+__all__ = [
+    "LinearSoftmaxExperimentConfig",
+    "recover_linear_softmax",
+    "run_linear_softmax_experiment",
+]

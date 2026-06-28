@@ -1,0 +1,14 @@
+name: tier2-small-lm
+phase: planned-confirmatory
+independent_lineages: 512
+test_lineages: 144
+size_bins: [0.5M-1.5M, 3M-5M, 8M-12M, 20M-30M]
+corpora: [tinystories_clean, tinystories, wikitext103, synthetic_mixture]
+checkpoints: [early, middle, final]
+interventions: [lora_rank2, lora_rank8, sparse_edit, head_ablation]
+held_out_axes: [seed, data_order, corpus, width_interpolation, depth_extrapolation, edit_type]
+channels: [tokens, sample_histogram, topk, logits, logit_sketch]
+query_budgets: [16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]
+notes: >-
+  Target-model distributed training is cluster-specific. Dataset/tokenization and downstream trace,
+  inverse, evaluation, tracking, and statistical interfaces are wired in this repository.

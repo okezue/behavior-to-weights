@@ -1,0 +1,38 @@
+# Adjust vocab/max sequence/observation dimensions to each architecture family.
+canonicalize: false
+model:
+  vocab_size: 50257
+  max_seq_len: 256
+  observation_dim: 512
+  trace_width: 512
+  trace_heads: 8
+  query_layers: 4
+  set_layers: 8
+  latent_dim: 1024
+  address_width: 256
+  decoder_width: 2048
+  decoder_layers: 6
+  max_tensors: 2048
+  max_layers: 128
+  role_count: 64
+  dropout: 0.1
+  min_log_variance: -12.0
+  max_log_variance: 6.0
+  property_dims: {}
+training:
+  steps: 100000
+  batch_size: 8
+  query_budgets: [64, 128, 256, 512, 1024]
+  coordinate_count: 32768
+  learning_rate: 0.0001
+  weight_decay: 0.01
+  warmup_steps: 5000
+  gradient_clip: 1.0
+  variance_regularization: 0.0001
+  property_loss_weight: 0.1
+  validation_every: 1000
+  validation_batches: 64
+  early_stopping_patience: 20
+  seed: 20260621
+  device: cuda
+  mixed_precision: true

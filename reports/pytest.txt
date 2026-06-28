@@ -1,0 +1,12 @@
+........................................                                 [100%]
+=============================== warnings summary ===============================
+tests/test_inverse.py::test_inverse_shapes_and_set_invariance
+  /mnt/data/behavior-to-weights/src/behavior2weights/models/inverse.py:83: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+    self.transformer = nn.TransformerEncoder(layer, num_layers=config.query_layers)
+
+tests/test_inverse.py::test_inverse_shapes_and_set_invariance
+  /mnt/data/behavior-to-weights/src/behavior2weights/models/inverse.py:135: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+    self.set_transformer = nn.TransformerEncoder(layer, num_layers=config.set_layers)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+40 passed, 1 deselected, 2 warnings in 1.93s

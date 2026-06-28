@@ -1,0 +1,14 @@
+name: tier3-medium-lm
+phase: planned
+size_bins: [30M-70M, 100M-200M, 300M-500M]
+custom_lineages_per_bin: 48
+public_suites: [pythia]
+checkpoints: [early, middle, final]
+interventions:
+  lora_ranks: [2, 8, 32]
+  sparse_scales: [0.1, 0.5, 1.0]
+  quantization: [int8, int4]
+channels: [tokens, topk, logits, logit_sketch]
+query_budgets: [64, 128, 256, 512, 1024, 2048, 4096, 8192]
+coordinate_training: sampled
+full_reconstruction: blockwise

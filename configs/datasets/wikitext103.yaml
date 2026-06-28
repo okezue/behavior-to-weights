@@ -1,0 +1,12 @@
+dataset:
+  dataset_name: Salesforce/wikitext
+  dataset_config: wikitext-103-raw-v1
+  text_column: text
+  tokenizer_name: gpt2
+  sequence_length: 256
+  train_split: train
+  validation_split: validation
+  test_split: test
+  num_proc: 8
+  revision: null
+  tokenizer_revision: null

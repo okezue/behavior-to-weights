@@ -1,0 +1,35 @@
+model:
+  vocab_size: 32
+  max_seq_len: 16
+  observation_dim: 32
+  trace_width: 128
+  trace_heads: 8
+  query_layers: 2
+  set_layers: 3
+  latent_dim: 128
+  address_width: 32
+  decoder_width: 64
+  decoder_layers: 1
+  max_tensors: 512
+  max_layers: 128
+  role_count: 32
+  dropout: 0.1
+
+training:
+  properties:
+    - architecture_id
+    - task_id
+    - intervention_kind
+    - training_step_bin
+    - factor:optimizer
+  steps: 5000
+  batch_size: 64
+  query_budgets: [8, 16, 32, 64, 128]
+  learning_rate: 0.0003
+  weight_decay: 0.0001
+  warmup_steps: 250
+  validation_every: 250
+  validation_batches: 8
+  early_stopping_patience: 12
+  seed: 20260621
+  device: cuda

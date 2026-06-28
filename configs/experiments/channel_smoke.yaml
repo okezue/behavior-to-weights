@@ -1,0 +1,7 @@
+# Exercises every black-box interface on the CPU smoke zoo.
+channels:
+  - {name: tokens, feature_dim: 16, sample_count: 1}
+  - {name: sample_histogram, feature_dim: 16, sample_count: 11}
+  - {name: topk, topk: 4, feature_dim: 8}
+  - {name: logits, feature_dim: 16}
+  - {name: logit_sketch, sketch_dim: 7, feature_dim: 7, sketch_seed: 17}

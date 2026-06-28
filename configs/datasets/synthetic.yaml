@@ -1,0 +1,9 @@
+dataset:
+  task: mixture
+  vocab_size: 64
+  seq_len: 32
+  train_examples: 16384
+  validation_examples: 2048
+  test_examples: 2048
+  seed: 20260621
+  noise: 0.05

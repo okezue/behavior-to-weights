@@ -1,0 +1,19 @@
+                                                                                
+ Usage: b2w zoo [OPTIONS] COMMAND [ARGS]...                                     
+                                                                                
+ Create and inspect target-model zoos.                                          
+                                                                                
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ plan          Expand a zoo config into exact counts without training or      │
+│               downloading models.                                            │
+│ build-micro                                                                  │
+│ build-text    Train a multi-lineage transparent LM zoo on a prepared text    │
+│               corpus.                                                        │
+│ build-public  Expand a pinned public-model specification into a target       │
+│               manifest.                                                      │
+│ summary                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────╯
+

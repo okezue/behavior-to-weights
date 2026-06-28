@@ -1,0 +1,7 @@
+tracking:
+  backend: aim
+  repo: aim://aim-server:53800
+  experiment: behavior-to-weights
+  enabled: true
+  tags: [remote]
+  system_tracking_interval: 10.0

@@ -1,0 +1,124 @@
+models:
+  - model_name: roneneldan/TinyStories-1M
+    external_family: tinystories
+    parameter_count: 1000000
+    tokenizer_name: EleutherAI/gpt-neo-125M
+    license: upstream-model-card
+  - model_name: roneneldan/TinyStories-3M
+    external_family: tinystories
+    parameter_count: 3000000
+    tokenizer_name: EleutherAI/gpt-neo-125M
+    license: upstream-model-card
+  - model_name: roneneldan/TinyStories-8M
+    external_family: tinystories
+    parameter_count: 8000000
+    tokenizer_name: EleutherAI/gpt-neo-125M
+    license: upstream-model-card
+  - model_name: roneneldan/TinyStories-28M
+    external_family: tinystories
+    parameter_count: 28000000
+    tokenizer_name: EleutherAI/gpt-neo-125M
+    license: upstream-model-card
+  - model_name: roneneldan/TinyStories-33M
+    external_family: tinystories
+    parameter_count: 33000000
+    tokenizer_name: EleutherAI/gpt-neo-125M
+    license: upstream-model-card
+
+  # The 14M repository was changed in February 2026. Pin a commit after choosing standard or deduped Pile.
+  - model_name: EleutherAI/pythia-14m
+    external_family: pythia
+    tokenizer_name: EleutherAI/gpt-neox-20b
+    parameter_count: 14067712
+    revisions: [step0, step16, step128, step1000, step10000, step50000, step100000, step143000]
+    license: apache-2.0
+    metadata: {dataset_id: pile-standard}
+  - model_name: EleutherAI/pythia-31m
+    external_family: pythia
+    tokenizer_name: EleutherAI/gpt-neox-20b
+    parameter_count: 30494720
+    revisions: [step0, step16, step128, step1000, step10000, step50000, step100000, step143000]
+    license: apache-2.0
+  - model_name: EleutherAI/pythia-70m
+    external_family: pythia
+    tokenizer_name: EleutherAI/gpt-neox-20b
+    parameter_count: 70426624
+    revisions: [step0, step16, step128, step1000, step10000, step50000, step100000, step143000]
+    license: apache-2.0
+  - model_name: EleutherAI/pythia-160m
+    external_family: pythia
+    tokenizer_name: EleutherAI/gpt-neox-20b
+    parameter_count: 162322944
+    revisions: [step0, step16, step128, step1000, step10000, step50000, step100000, step143000]
+    license: apache-2.0
+  - model_name: EleutherAI/pythia-410m
+    external_family: pythia
+    tokenizer_name: EleutherAI/gpt-neox-20b
+    parameter_count: 405334016
+    revisions: [step0, step16, step128, step1000, step10000, step50000, step100000, step143000]
+    license: apache-2.0
+  - model_name: EleutherAI/pythia-1b
+    external_family: pythia
+    tokenizer_name: EleutherAI/gpt-neox-20b
+    parameter_count: 1011781632
+    revisions: [step0, step128, step1000, step10000, step50000, step100000, step143000]
+    license: apache-2.0
+    torch_dtype: bfloat16
+
+  - model_name: EleutherAI/pythia-1.4b
+    external_family: pythia
+    tokenizer_name: EleutherAI/gpt-neox-20b
+    parameter_count: 1414647808
+    revisions: [step0, step128, step1000, step10000, step50000, step100000, step143000]
+    license: apache-2.0
+    torch_dtype: float16
+  - model_name: EleutherAI/pythia-2.8b
+    external_family: pythia
+    tokenizer_name: EleutherAI/gpt-neox-20b
+    parameter_count: 2775208960
+    revisions: [step0, step128, step1000, step10000, step50000, step100000, step143000]
+    license: apache-2.0
+    torch_dtype: float16
+
+  - model_name: HuggingFaceTB/SmolLM2-135M
+    external_family: smollm2
+    tokenizer_name: HuggingFaceTB/SmolLM2-135M
+    architecture_id: smollm2-135m
+    parameter_count: 135000000
+    license: apache-2.0
+    torch_dtype: bfloat16
+  - model_name: HuggingFaceTB/SmolLM2-135M-Instruct
+    external_family: smollm2
+    tokenizer_name: HuggingFaceTB/SmolLM2-135M
+    architecture_id: smollm2-135m
+    parameter_count: 135000000
+    license: apache-2.0
+    torch_dtype: bfloat16
+  - model_name: HuggingFaceTB/SmolLM2-360M
+    external_family: smollm2
+    tokenizer_name: HuggingFaceTB/SmolLM2-135M
+    architecture_id: smollm2-360m
+    parameter_count: 360000000
+    license: apache-2.0
+    torch_dtype: bfloat16
+  - model_name: HuggingFaceTB/SmolLM2-360M-Instruct
+    external_family: smollm2
+    tokenizer_name: HuggingFaceTB/SmolLM2-135M
+    architecture_id: smollm2-360m
+    parameter_count: 360000000
+    license: apache-2.0
+    torch_dtype: bfloat16
+  - model_name: HuggingFaceTB/SmolLM2-1.7B
+    external_family: smollm2
+    tokenizer_name: HuggingFaceTB/SmolLM2-135M
+    architecture_id: smollm2-1.7b
+    parameter_count: 1700000000
+    license: apache-2.0
+    torch_dtype: bfloat16
+  - model_name: HuggingFaceTB/SmolLM2-1.7B-Instruct
+    external_family: smollm2
+    tokenizer_name: HuggingFaceTB/SmolLM2-135M
+    architecture_id: smollm2-1.7b
+    parameter_count: 1700000000
+    license: apache-2.0
+    torch_dtype: bfloat16

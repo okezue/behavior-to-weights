@@ -1,0 +1,13 @@
+                                                                                
+ Usage: b2w train [OPTIONS] COMMAND [ARGS]...                                   
+                                                                                
+ Train inverse models.                                                          
+                                                                                
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ inverse                                                                      │
+│ properties  Train pooled architecture/training/circuit property classifiers. │
+╰──────────────────────────────────────────────────────────────────────────────╯
+

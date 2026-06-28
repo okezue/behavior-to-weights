@@ -1,0 +1,15 @@
+# Execution validation only; not a powered scientific run.
+analytic:
+  input_dims: [2, 4]
+  class_counts: [3]
+  query_counts: [2, 3, 5]
+  query_strategies: [gaussian, basis]
+  observation_channels: [probabilities, samples]
+  sample_counts: [8, 64]
+  systems_per_cell: 5
+  holdout_queries: 32
+  weight_scale: 1.0
+  query_scale: 1.0
+  dirichlet_smoothing: 0.5
+  ridge: 0.0
+  seed: 20260621

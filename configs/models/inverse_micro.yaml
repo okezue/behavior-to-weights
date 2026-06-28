@@ -1,0 +1,37 @@
+canonicalize: true
+model:
+  vocab_size: 64
+  max_seq_len: 32
+  observation_dim: 64
+  trace_width: 128
+  trace_heads: 8
+  query_layers: 2
+  set_layers: 4
+  latent_dim: 256
+  address_width: 128
+  decoder_width: 512
+  decoder_layers: 4
+  max_tensors: 256
+  max_layers: 32
+  role_count: 32
+  dropout: 0.1
+  min_log_variance: -10.0
+  max_log_variance: 4.0
+  property_dims: {}
+training:
+  steps: 20000
+  batch_size: 32
+  query_budgets: [32, 64, 128, 256, 512]
+  coordinate_count: 8192
+  learning_rate: 0.0003
+  weight_decay: 0.0001
+  warmup_steps: 1000
+  gradient_clip: 1.0
+  variance_regularization: 0.0001
+  property_loss_weight: 0.1
+  validation_every: 250
+  validation_batches: 32
+  early_stopping_patience: 20
+  seed: 20260621
+  device: cuda
+  mixed_precision: true

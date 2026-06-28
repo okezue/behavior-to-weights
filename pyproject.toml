@@ -1,0 +1,104 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "behavior2weights"
+version = "0.1.0"
+description = "Amortized black-box system identification of transformers from behavioral traces."
+readme = "README.md"
+requires-python = ">=3.11,<3.15"
+license = {text = "Apache-2.0"}
+authors = [{name = "Behavior-to-Weights contributors"}]
+keywords = ["transformers", "interpretability", "model-extraction", "system-identification", "hypernetworks"]
+dependencies = [
+  "numpy>=2.0,<3",
+  "pandas>=2.2,<3",
+  "pydantic>=2.8,<3",
+  "PyYAML>=6.0,<7",
+  "safetensors>=0.5,<1",
+  "scikit-learn>=1.5,<2",
+  "scipy>=1.14,<2",
+  "statsmodels>=0.14,<1",
+  "torch>=2.7,<2.13",
+  "tqdm>=4.66,<5",
+  "typer>=0.15,<1",
+]
+
+[project.optional-dependencies]
+hf = [
+  "datasets>=4.8,<6",
+  "huggingface-hub>=0.30,<2",
+  "tokenizers>=0.21,<1",
+  "transformers>=4.57,<6",
+]
+aim = ["aim==3.29.1; python_version < '3.13'"]
+cloud = ["boto3>=1.35,<2", "s3fs>=2025.2"]
+parquet = ["pyarrow>=18,<24"]
+interpretability = ["transformer-lens>=2.15,<4"]
+dev = [
+  "coverage[toml]>=7.6,<8",
+  "mypy>=1.14,<2",
+  "pytest>=8.3,<10",
+  "pytest-cov>=6,<8",
+  "ruff>=0.9,<1",
+]
+all = [
+  "aim==3.29.1; python_version < '3.13'",
+  "boto3>=1.35,<2",
+  "datasets>=4.8,<6",
+  "huggingface-hub>=0.30,<2",
+  "pyarrow>=18,<24",
+  "s3fs>=2025.2",
+  "tokenizers>=0.21,<1",
+  "transformers>=4.57,<6",
+]
+
+[project.scripts]
+b2w = "behavior2weights.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["behavior2weights*"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-markers -m 'not slow and not network'"
+testpaths = ["tests"]
+markers = [
+  "slow: compute-heavy tests excluded from the default suite",
+  "network: tests requiring internet access",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_unused_configs = true
+warn_return_any = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+
+[tool.coverage.run]
+source = ["behavior2weights"]
+branch = true
+
+[[tool.mypy.overrides]]
+module = [
+  "datasets",
+  "tokenizers",
+  "transformers",
+  "pandas",
+  "scipy",
+  "scipy.*",
+  "sklearn.*",
+  "statsmodels",
+  "statsmodels.*",
+  "yaml",
+]
+ignore_missing_imports = true

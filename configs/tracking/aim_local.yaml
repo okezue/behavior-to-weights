@@ -1,0 +1,7 @@
+tracking:
+  backend: aim
+  repo: ./aim-data
+  experiment: behavior-to-weights
+  enabled: true
+  tags: [local]
+  system_tracking_interval: 10.0

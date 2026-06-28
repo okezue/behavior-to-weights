@@ -1,0 +1,29 @@
+services:
+  aim-server:
+    build: .
+    command: ["aim", "server", "--repo", "/aim", "--host", "0.0.0.0", "--port", "53800"]
+    ports:
+      - "53800:53800"
+    volumes:
+      - aim-data:/aim
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import socket; s=socket.create_connection((\"127.0.0.1\",53800),2); s.close()'"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  aim-ui:
+    build: .
+    command: ["aim", "up", "--repo", "/aim", "--host", "0.0.0.0", "--port", "43800"]
+    ports:
+      - "43800:43800"
+    volumes:
+      - aim-data:/aim
+    depends_on:
+      aim-server:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  aim-data:

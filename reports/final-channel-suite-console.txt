@@ -1,0 +1,120 @@
+{
+  "channels": [
+    {
+      "auxiliary_keys": [
+        "output_ids"
+      ],
+      "channel": "tokens",
+      "directory": "artifacts/final-smoke/traces-suite/tokens",
+      "observation_config": {
+        "center_logits": true,
+        "channel": "tokens",
+        "feature_dim": 16,
+        "sample_count": 1,
+        "sketch_dim": 16,
+        "sketch_seed": 17,
+        "temperature": 1.0,
+        "topk": 8,
+        "vocab_size": 16
+      },
+      "shape": [
+        24,
+        32,
+        16
+      ]
+    },
+    {
+      "auxiliary_keys": [
+        "output_ids"
+      ],
+      "channel": "sample_histogram",
+      "directory": "artifacts/final-smoke/traces-suite/sample_histogram",
+      "observation_config": {
+        "center_logits": true,
+        "channel": "sample_histogram",
+        "feature_dim": 16,
+        "sample_count": 11,
+        "sketch_dim": 16,
+        "sketch_seed": 17,
+        "temperature": 1.0,
+        "topk": 8,
+        "vocab_size": 16
+      },
+      "shape": [
+        24,
+        32,
+        16
+      ]
+    },
+    {
+      "auxiliary_keys": [
+        "topk_indices",
+        "topk_values"
+      ],
+      "channel": "topk",
+      "directory": "artifacts/final-smoke/traces-suite/topk",
+      "observation_config": {
+        "center_logits": true,
+        "channel": "topk",
+        "feature_dim": 8,
+        "sample_count": 32,
+        "sketch_dim": 16,
+        "sketch_seed": 17,
+        "temperature": 1.0,
+        "topk": 4,
+        "vocab_size": 16
+      },
+      "shape": [
+        24,
+        32,
+        8
+      ]
+    },
+    {
+      "auxiliary_keys": [],
+      "channel": "logits",
+      "directory": "artifacts/final-smoke/traces-suite/logits",
+      "observation_config": {
+        "center_logits": true,
+        "channel": "logits",
+        "feature_dim": 16,
+        "sample_count": 32,
+        "sketch_dim": 16,
+        "sketch_seed": 17,
+        "temperature": 1.0,
+        "topk": 8,
+        "vocab_size": 16
+      },
+      "shape": [
+        24,
+        32,
+        16
+      ]
+    },
+    {
+      "auxiliary_keys": [],
+      "channel": "logit_sketch",
+      "directory": "artifacts/final-smoke/traces-suite/logit_sketch",
+      "observation_config": {
+        "center_logits": true,
+        "channel": "logit_sketch",
+        "feature_dim": 7,
+        "sample_count": 32,
+        "sketch_dim": 7,
+        "sketch_seed": 17,
+        "temperature": 1.0,
+        "topk": 8,
+        "vocab_size": 16
+      },
+      "shape": [
+        24,
+        32,
+        7
+      ]
+    }
+  ],
+  "experiment": "configs/experiments/channel_smoke.yaml",
+  "manifest": "artifacts/final-smoke/zoo/targets.jsonl",
+  "queries": "artifacts/final-smoke/queries.jsonl",
+  "schema_version": 1
+}

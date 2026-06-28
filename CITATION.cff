@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+title: "Behavior-to-Weights: Amortized System Identification of Transformers"
+message: "Please cite the repository and the foundational works listed in docs/REFERENCES.md."
+type: software
+authors:
+  - name: "Behavior-to-Weights contributors"
+version: 0.1.0
+date-released: 2026-06-21
+license: Apache-2.0

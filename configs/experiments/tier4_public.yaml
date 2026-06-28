@@ -1,0 +1,11 @@
+name: tier4-public-external-validity
+phase: external-replication
+manifest: configs/model_zoo/public_models.yaml
+analyses:
+  - leave_one_family_out
+  - leave_one_size_bin_out
+  - base_to_instruct
+  - checkpoint_step_inference
+  - quantization_transfer
+coordinate_metrics: within_compatible_family_only
+primary_metrics: [identity_accuracy, property_auroc, functional_kl, query_efficiency_auc]

@@ -1,0 +1,11 @@
+tokenizer:
+  dataset_name: karpathy/tinystories-gpt4-clean
+  dataset_config: null
+  revision: null  # pin before confirmatory execution
+  split: train
+  text_column: text
+  vocab_size: 2048
+  min_frequency: 2
+  sample_size: 1000000
+  batch_size: 1000
+  special_tokens: ["<|pad|>", "<|unk|>", "<|endoftext|>"]

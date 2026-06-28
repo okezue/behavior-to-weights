@@ -1,0 +1,233 @@
+{
+  "date_utc": "2026-06-21",
+  "not_executed": [
+    "Hugging Face dataset downloads and public checkpoint downloads",
+    "Tier-1/Tier-2/Tier-3 confirmatory GPU training",
+    "AWS Batch or Slurm jobs",
+    "AIM server/client integration at runtime",
+    "multi-node or CUDA execution"
+  ],
+  "plans": {
+    "public": {
+      "lineage_splits": {
+        "ood": 19,
+        "test": 0,
+        "train": 0,
+        "validation": 0
+      },
+      "lineages": 19,
+      "raw_checkpoint_gib_fp32": 172.613698720932,
+      "targets": 72
+    },
+    "tier1_micro": {
+      "lineage_splits": {
+        "ood": 0,
+        "test": 512,
+        "train": 1792,
+        "validation": 256
+      },
+      "lineages": 2560,
+      "raw_checkpoint_gib_fp32": 2.057361602783203,
+      "targets": 23040
+    },
+    "tier2_text_pilot": {
+      "lineage_splits": {
+        "ood": 0,
+        "test": 6,
+        "train": 23,
+        "validation": 3
+      },
+      "lineages": 32,
+      "raw_checkpoint_gib_fp32": 6.046749114990234,
+      "targets": 192
+    }
+  },
+  "public_manifest": {
+    "architectures": 16,
+    "families": [
+      "huggingface-causal-lm"
+    ],
+    "intervened_targets": 0,
+    "lineages": 19,
+    "splits": {
+      "ood": 72,
+      "test": 0,
+      "train": 0,
+      "validation": 0
+    },
+    "targets": 72,
+    "tasks": [
+      "public-pretraining"
+    ]
+  },
+  "repository": {
+    "git_metadata_available": false,
+    "source_lines": 8078,
+    "source_python_files": 62,
+    "test_files": 15,
+    "test_lines": 917
+  },
+  "runtime": {
+    "cuda_available": false,
+    "cuda_version": null,
+    "environment": {},
+    "gpu_count": 0,
+    "gpu_names": [],
+    "optional_dependencies": {
+      "aim": null,
+      "boto3": "1.43.18",
+      "datasets": null,
+      "pyarrow": null,
+      "transformers": null
+    },
+    "platform": "Linux-4.4.0-x86_64-with-glibc2.41",
+    "python": "3.13.5 (main, May  5 2026, 21:05:52) [GCC 14.2.0]",
+    "torch": "2.10.0+cpu"
+  },
+  "schema_version": 1,
+  "smoke": {
+    "evaluation_target": "target-ec6e1fc20ec1eadf",
+    "functional": {
+      "forward_kl": 0.00112055242061615,
+      "probability_l1": 0.038180992007255554,
+      "reverse_kl": 0.001124548027291894,
+      "top1_agreement": 0.0
+    },
+    "inverse_parameters": 14274,
+    "mean_checkpoint_nrmse": 0.11998054385185242,
+    "note": "Smoke results validate execution only; they are not powered scientific estimates.",
+    "status": "completed",
+    "target_parameters": 936,
+    "trace_shape": [
+      24,
+      32,
+      16
+    ],
+    "training": {
+      "best_validation_nll": 0.5311257541179657,
+      "steps_completed": 12
+    },
+    "weight_nrmse": 0.10860557109117508,
+    "zoo": {
+      "architectures": 1,
+      "families": [
+        "micro-transformer"
+      ],
+      "intervened_targets": 8,
+      "lineages": 8,
+      "splits": {
+        "ood": 0,
+        "test": 6,
+        "train": 15,
+        "validation": 3
+      },
+      "targets": 24,
+      "tasks": [
+        "markov"
+      ]
+    }
+  },
+  "static_analysis": {
+    "compileall": "passed",
+    "mypy": "passed",
+    "mypy_source_files": 62,
+    "ruff": "passed",
+    "shell_syntax": "passed",
+    "yaml_json_jsonl_parse": "passed"
+  },
+  "status": "validated",
+  "study_lock_checks": [
+    {
+      "actual_sha256": "2e40e060b7ea45b4fda2fc80874569bfa6bffc3c977c4265f8c150b9fc79ff90",
+      "expected_sha256": "2e40e060b7ea45b4fda2fc80874569bfa6bffc3c977c4265f8c150b9fc79ff90",
+      "path": "configs/experiments/tier1_micro.yaml",
+      "valid": true
+    },
+    {
+      "actual_sha256": "455380a27dc106c8d430c4945b17b93426d2e2e1c7e022a52cafba1d368e5bcb",
+      "expected_sha256": "455380a27dc106c8d430c4945b17b93426d2e2e1c7e022a52cafba1d368e5bcb",
+      "path": "configs/model_zoo/micro_confirmatory.yaml",
+      "valid": true
+    },
+    {
+      "actual_sha256": "e1741d0c4ca923abc8d17766da2ede95de52b35bdac264b9bf2e08d0b9653754",
+      "expected_sha256": "e1741d0c4ca923abc8d17766da2ede95de52b35bdac264b9bf2e08d0b9653754",
+      "path": "configs/models/inverse_micro.yaml",
+      "valid": true
+    },
+    {
+      "actual_sha256": "1914ca67bbcb35f5b731a3a675a6a49da09a98338bc9721c75fde5a2755cccde",
+      "expected_sha256": "1914ca67bbcb35f5b731a3a675a6a49da09a98338bc9721c75fde5a2755cccde",
+      "path": "docs/STATISTICAL_ANALYSIS_PLAN.md",
+      "valid": true
+    }
+  ],
+  "study_lock_valid": true,
+  "tests": {
+    "deselected": 1,
+    "passed": 40,
+    "warnings": 2
+  },
+  "tier0": {
+    "cells": 36,
+    "systems": 180
+  },
+  "trace_suite": {
+    "auxiliary_keys": {
+      "logit_sketch": [],
+      "logits": [],
+      "sample_histogram": [
+        "output_ids"
+      ],
+      "tokens": [
+        "output_ids"
+      ],
+      "topk": [
+        "topk_indices",
+        "topk_values"
+      ]
+    },
+    "channel_shapes": {
+      "logit_sketch": [
+        24,
+        32,
+        7
+      ],
+      "logits": [
+        24,
+        32,
+        16
+      ],
+      "sample_histogram": [
+        24,
+        32,
+        16
+      ],
+      "tokens": [
+        24,
+        32,
+        16
+      ],
+      "topk": [
+        24,
+        32,
+        8
+      ]
+    },
+    "channels": [
+      "tokens",
+      "sample_histogram",
+      "topk",
+      "logits",
+      "logit_sketch"
+    ],
+    "validations": {
+      "validation": "valid",
+      "validation-logit_sketch": "valid",
+      "validation-logits": "valid",
+      "validation-sample_histogram": "valid",
+      "validation-tokens": "valid",
+      "validation-topk": "valid"
+    }
+  }
+}

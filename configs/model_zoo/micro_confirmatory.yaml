@@ -1,0 +1,32 @@
+# Large by design. Review projected checkpoint count and cost before execution.
+name: tier1-micro-confirmatory
+zoo:
+  architectures:
+    - {vocab_size: 64, max_seq_len: 32, d_model: 8,  n_heads: 1, n_layers: 1, d_ff: 16,  dropout: 0.0}
+    - {vocab_size: 64, max_seq_len: 32, d_model: 16, n_heads: 2, n_layers: 1, d_ff: 32,  dropout: 0.0}
+    - {vocab_size: 64, max_seq_len: 32, d_model: 24, n_heads: 3, n_layers: 2, d_ff: 64,  dropout: 0.0}
+    - {vocab_size: 64, max_seq_len: 32, d_model: 48, n_heads: 6, n_layers: 3, d_ff: 128, dropout: 0.0}
+  tasks: [markov, copy, induction, modular_addition]
+  # 40 initialization seeds x 4 data-order seeds = 160 lineages per architecture/task/optimizer cell.
+  model_seeds: {start: 10000, stop: 10040}
+  dataset_seeds: [201, 401, 601, 801]
+  optimizers:
+    - {name: adamw, learning_rate: 0.003, weight_decay: 0.0, beta1: 0.9, beta2: 0.95}
+  train_steps: 2000
+  checkpoint_steps: [0, 50, 250, 1000, 2000]
+  batch_size: 128
+  train_examples: 16384
+  validation_examples: 2048
+  test_examples: 2048
+  gradient_clip: 1.0
+  interventions:
+    - {kind: attention_head_ablation, count: 1}
+    - {kind: mlp_neuron_ablation, count: 1}
+    - {kind: lora_edit, count: 1, rank: 4, scale: 0.05}
+    - {kind: sparse_weight_edit, count: 1, rank: 32, scale: 0.5}
+split_policy:
+  train_fraction: 0.70
+  validation_fraction: 0.10
+  test_fraction: 0.20
+  salt: b2w-tier1-confirmatory-v1
+  ood_factor_values: {}

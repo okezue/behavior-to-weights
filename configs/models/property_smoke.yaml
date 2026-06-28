@@ -1,0 +1,35 @@
+model:
+  vocab_size: 16
+  max_seq_len: 8
+  observation_dim: 16
+  trace_width: 16
+  trace_heads: 2
+  query_layers: 1
+  set_layers: 1
+  latent_dim: 16
+  address_width: 8
+  decoder_width: 16
+  decoder_layers: 1
+  max_tensors: 64
+  max_layers: 8
+  role_count: 32
+  dropout: 0.0
+
+training:
+  properties:
+    - architecture_id
+    - task_id
+    - intervention_kind
+    - training_step_bin
+    - factor:optimizer
+  steps: 20
+  batch_size: 4
+  query_budgets: [8, 16]
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  warmup_steps: 2
+  validation_every: 5
+  validation_batches: 2
+  early_stopping_patience: 10
+  seed: 20260621
+  device: cpu

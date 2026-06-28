@@ -1,0 +1,20 @@
+name: tier1-micro
+phase: pilot
+query_bank:
+  vocab_size: 64
+  seq_len: 31
+  random_queries: 4096
+  natural_queries: 4096
+  exhaustive_max_vocab: 8
+  exhaustive_max_length: 5
+  seed: 20260621
+include: [random, natural]
+channels:
+  - {name: tokens, sample_count: 1}
+  - {name: sample_histogram, sample_count: 32}
+  - {name: topk, topk: 8}
+  - {name: logits}
+  - {name: logit_sketch, sketch_dim: 32, sketch_seed: 17}
+query_budgets: [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
+primary_metrics: [functional_kl_auc, orbit_nrmse_auc, edit_mrr]
+negative_controls: [shuffled_targets, shuffled_responses, path_only, permutation_invariance]

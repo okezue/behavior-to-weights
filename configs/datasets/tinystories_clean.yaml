@@ -1,0 +1,12 @@
+dataset:
+  dataset_name: karpathy/tinystories-gpt4-clean
+  dataset_config: null
+  text_column: text
+  tokenizer_name: gpt2
+  sequence_length: 256
+  train_split: train
+  validation_split: validation
+  test_split: test
+  num_proc: 8
+  revision: null       # pin immutable commit before confirmatory run
+  tokenizer_revision: null

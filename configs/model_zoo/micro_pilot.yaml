@@ -1,0 +1,29 @@
+name: tier1-micro-pilot
+zoo:
+  architectures:
+    - {vocab_size: 32, max_seq_len: 16, d_model: 8,  n_heads: 1, n_layers: 1, d_ff: 16, dropout: 0.0}
+    - {vocab_size: 32, max_seq_len: 16, d_model: 16, n_heads: 2, n_layers: 1, d_ff: 32, dropout: 0.0}
+    - {vocab_size: 32, max_seq_len: 16, d_model: 24, n_heads: 3, n_layers: 2, d_ff: 48, dropout: 0.0}
+    - {vocab_size: 32, max_seq_len: 16, d_model: 32, n_heads: 4, n_layers: 3, d_ff: 96, dropout: 0.0}
+  tasks: [markov, copy, induction, modular_addition]
+  model_seeds: {start: 0, stop: 16}
+  dataset_seeds: [100, 200]
+  optimizers:
+    - {name: adamw, learning_rate: 0.003, weight_decay: 0.0, beta1: 0.9, beta2: 0.95}
+  train_steps: 500
+  checkpoint_steps: [0, 10, 50, 200, 500]
+  batch_size: 64
+  train_examples: 4096
+  validation_examples: 512
+  test_examples: 512
+  gradient_clip: 1.0
+  interventions:
+    - {kind: attention_head_ablation, count: 1}
+    - {kind: mlp_neuron_ablation, count: 1}
+    - {kind: lora_edit, count: 1, rank: 2, scale: 0.05}
+    - {kind: sparse_weight_edit, count: 1, rank: 16, scale: 0.5}
+split_policy:
+  train_fraction: 0.70
+  validation_fraction: 0.10
+  test_fraction: 0.20
+  salt: b2w-tier1-pilot-v1

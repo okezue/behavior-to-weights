@@ -1,0 +1,11 @@
+dataset:
+  dataset_name: roneneldan/TinyStories
+  text_column: text
+  tokenizer_name: gpt2
+  sequence_length: 256
+  train_split: train
+  validation_split: validation
+  test_split: validation
+  num_proc: 8
+  revision: null
+  tokenizer_revision: null

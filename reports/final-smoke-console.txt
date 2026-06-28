@@ -1,0 +1,42 @@
+{
+  "evaluation_target": "target-ec6e1fc20ec1eadf",
+  "functional": {
+    "forward_kl": 0.00112055242061615,
+    "probability_l1": 0.038180992007255554,
+    "reverse_kl": 0.001124548027291894,
+    "top1_agreement": 0.0
+  },
+  "inverse_parameters": 14274,
+  "mean_checkpoint_nrmse": 0.11998054385185242,
+  "note": "Smoke results validate execution only; they are not powered scientific estimates.",
+  "status": "completed",
+  "target_parameters": 936,
+  "trace_shape": [
+    24,
+    32,
+    16
+  ],
+  "training": {
+    "best_validation_nll": 0.5311257541179657,
+    "steps_completed": 12
+  },
+  "weight_nrmse": 0.10860557109117508,
+  "zoo": {
+    "architectures": 1,
+    "families": [
+      "micro-transformer"
+    ],
+    "intervened_targets": 8,
+    "lineages": 8,
+    "splits": {
+      "ood": 0,
+      "test": 6,
+      "train": 15,
+      "validation": 3
+    },
+    "targets": 24,
+    "tasks": [
+      "markov"
+    ]
+  }
+}

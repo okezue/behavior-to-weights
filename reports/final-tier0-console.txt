@@ -1,0 +1,5 @@
+{
+  "cells": 36,
+  "result_path": "artifacts/final-tier0-smoke/results.jsonl",
+  "systems": 180
+}

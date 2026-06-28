@@ -1,0 +1,16 @@
+                                                                                
+ Usage: b2w traces [OPTIONS] COMMAND [ARGS]...                                  
+                                                                                
+ Collect black-box behavior traces.                                             
+                                                                                
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ collect-micro                                                                │
+│ collect-micro-suite  Collect every channel declared in an experiment YAML    │
+│                      into immutable sub-stores.                              │
+│ collect-hf           Collect traces from a homogeneous Hugging Face model    │
+│                      family.                                                 │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
