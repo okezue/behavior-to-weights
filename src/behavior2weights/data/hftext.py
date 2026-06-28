@@ -50,14 +50,14 @@ def preparehfcausallmdataset(config:HFTextDatasetConfig,output_directory:str|Pat
     def tokenize(batch:dict[str,list[str]])->dict[str,Any]:
         texts=[text if isinstance(text,str)else "" for text in batch[config.text_column]]
         return cast(dict[str,Any],tokenizer(texts,add_special_tokens=False,return_attention_mask=False),)
-    tokenized=dataset.map(tokenize,batched=True,num_proc=config.num_proc,remove_columns=dataset["train"].column_names,desc="Tokenizing text",)
+    tokenized=dataset.map(tokenize,batched=True,num_proc=config.num_proc,remove_columns=dataset["train"].column_names,desc="tokenize",)
     block_size=config.sequence_length+1
     def group(batch:dict[str,list[list[int]]])->dict[str,list[list[int]]]:
         concatenated=sum(batch["input_ids"],[])
         usable=len(concatenated)//block_size*block_size
         blocks=[concatenated[index:index+block_size]for index in range(0,usable,block_size)]
         return{"input_ids":blocks}
-    grouped=tokenized.map(group,batched=True,num_proc=config.num_proc,desc="Packing fixed-length causal-LM blocks",)
+    grouped=tokenized.map(group,batched=True,num_proc=config.num_proc,desc="pack",)
     output_directory.mkdir(parents=True,exist_ok=True)
     grouped.save_to_disk(str(output_directory/"arrow"))
     manifest={"schema_version":1,"config":dataclasses.asdict(config),"dataset_fingerprint":{name:split._fingerprint for name,split in grouped.items()},"rows":{name:len(split)for name,split in grouped.items()},"tokenizer":{"name_or_path":tokenizer.name_or_path,"vocab_size":len(tokenizer),"eos_token_id":tokenizer.eos_token_id,"pad_token_id":tokenizer.pad_token_id,},}

@@ -139,7 +139,7 @@ def collectmicrotraces(manifest:Annotated[Path,typer.Option(exists=True)],querie
     observation=ObservationConfig(channel=channel,vocab_size=vocab_size,feature_dim=feature_dim or default_feature_dim,topk=min(topk,vocab_size),sample_count=sample_count,temperature=temperature,sketch_dim=sketch_dim,sketch_seed=sketch_seed,center_logits=center_logits,)
     adapter=MicroTransformerAdapter(manifest_root=manifest.parent)
     bundle=collecttargettraces(records,query_records,adapter.load,observation,CollectionConfig(batch_size=batch_size,device=device,base_seed=base_seed),output_directory=output,)
-    typer.echo(f"stored traces with shape {tuple(bundle.observations.shape)} in {output}")
+    typer.echo(str(output))
 @traces_app.command("collect-micro-suite")
 def collectmicrotracesuite(manifest:Annotated[Path,typer.Option(exists=True)],queries:Annotated[Path,typer.Option(exists=True)],experiment:Annotated[Path,typer.Option(exists=True,readable=True)],output:Annotated[Path,typer.Option()],batch_size:Annotated[int,typer.Option(min=1)]=128,base_seed:Annotated[int,typer.Option()]=0,device:Annotated[str,typer.Option()]="cpu",)->None:
     records=loadmanifest(manifest,resolve_paths=False)
@@ -176,7 +176,7 @@ def collecthftraces(manifest:Annotated[Path,typer.Option(exists=True)],queries:A
     query_records=[QueryRecord.model_validate(row)for row in readjsonl(queries)]
     adapter=HuggingFaceCausalLMAdapter(manifest_root=manifest.parent,local_files_only=local_files_only)
     bundle=collecttargettraces(records,query_records,adapter.load,ObservationConfig(channel=channel,vocab_size=vocab_size,feature_dim=feature_dim or(sketch_dim if channel==ObservationChannel.LOGIT_SKETCH else(2*min(topk,vocab_size)if channel==ObservationChannel.TOPK else(min(vocab_size,512)if channel in{ObservationChannel.TOKENS,ObservationChannel.SAMPLE_HISTOGRAM}else vocab_size))),topk=min(topk,vocab_size),sample_count=sample_count,temperature=temperature,sketch_dim=sketch_dim,sketch_seed=sketch_seed,center_logits=center_logits,),CollectionConfig(batch_size=batch_size,device=device,base_seed=base_seed,fail_fast=fail_fast),output_directory=output,)
-    typer.echo(f"stored traces with shape {tuple(bundle.observations.shape)} in {output}")
+    typer.echo(str(output))
 @train_app.command("inverse")
 def traininverse(manifest:Annotated[Path,typer.Option(exists=True)],traces:Annotated[Path,typer.Option(exists=True)],config:Annotated[Path,typer.Option(exists=True)],output:Annotated[Path,typer.Option()],architecture_id:Annotated[str|None,typer.Option()]=None,tracking_config:Annotated[Path|None,typer.Option("--tracking-config",exists=True)]=None,run_name:Annotated[str,typer.Option()]="inverse",seed:Annotated[int|None,typer.Option()]=None,device:Annotated[str|None,typer.Option()]=None,)->None:
     raw=loadyaml(config)
