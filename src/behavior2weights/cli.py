@@ -122,11 +122,11 @@ def buildprobes(config:Annotated[Path,typer.Option(exists=True)],output:Annotate
     include=tuple(raw.get("include",["random","natural"]))
     records=buildquerybank(bank_config,include=include)
     savequerybank(records,output)
-    typer.echo(f"wrote {len(records)} queries to {output}")
+    typer.echo(str(output))
 @probes_app.command("build-hf")
 def buildhfprobes(prompts:Annotated[Path,typer.Option(exists=True,readable=True)],output:Annotated[Path,typer.Option()],tokenizer:Annotated[str,typer.Option(help="Pinned tokenizer name or local path.")],revision:Annotated[str|None,typer.Option()]=None,sequence_length:Annotated[int,typer.Option(min=2)]=128,text_field:Annotated[str,typer.Option()]="text",local_files_only:Annotated[bool,typer.Option()]=False,)->None:
     records=buildhfquerybank(prompts,output,tokenizer_name=tokenizer,revision=revision,sequence_length=sequence_length,text_field=text_field,local_files_only=local_files_only,)
-    typer.echo(f"wrote {len(records)} tokenized queries to {output}")
+    typer.echo(str(output))
 @traces_app.command("collect-micro")
 def collectmicrotraces(manifest:Annotated[Path,typer.Option(exists=True)],queries:Annotated[Path,typer.Option(exists=True)],output:Annotated[Path,typer.Option()],channel:Annotated[ObservationChannel,typer.Option()]=ObservationChannel.LOGITS,feature_dim:Annotated[int|None,typer.Option(min=1)]=None,topk:Annotated[int,typer.Option(min=1)]=8,sample_count:Annotated[int,typer.Option(min=1)]=32,temperature:Annotated[float,typer.Option(min=0.000001)]=1.0,sketch_dim:Annotated[int,typer.Option(min=1)]=16,sketch_seed:Annotated[int,typer.Option()]=17,center_logits:Annotated[bool,typer.Option()]=True,batch_size:Annotated[int,typer.Option(min=1)]=128,base_seed:Annotated[int,typer.Option()]=0,device:Annotated[str,typer.Option()]="cpu",)->None:
     records=loadmanifest(manifest,resolve_paths=False)
@@ -237,14 +237,14 @@ def evaluatemicro(manifest:Annotated[Path,typer.Option(exists=True)],traces:Anno
     parsed_policies=tuple(value.strip()for value in query_policies.split(",")if value.strip())
     parsed_splits=tuple(Split(value.strip())for value in splits.split(",")if value.strip())
     rows=evaluatemicroinverse(manifest_path=manifest,traces_directory=traces,checkpoint_directory=checkpoint,output_path=output,architecture_id=architecture_id,config=EvaluationConfig(query_budgets=parsed_budgets,query_policies=parsed_policies,splits=parsed_splits,functional_examples=functional_examples,tier=tier,run_id=run_id,replicate=replicate,seed=seed,),device=device,)
-    typer.echo(f"wrote {len(rows)} target-level result rows to {output}")
+    typer.echo(str(output))
 @eval_app.command("properties")
 def evaluateproperties(manifest:Annotated[Path,typer.Option(exists=True)],traces:Annotated[Path,typer.Option(exists=True)],checkpoint:Annotated[Path,typer.Option(exists=True)],output:Annotated[Path,typer.Option()],budgets:Annotated[str,typer.Option()]="16,32,64",query_policies:Annotated[str,typer.Option()]="random,population_disagreement",splits:Annotated[str,typer.Option()]="test,ood",tier:Annotated[str,typer.Option()]="tier2",run_id:Annotated[str,typer.Option()]="property-evaluation",replicate:Annotated[int,typer.Option(min=0)]=0,seed:Annotated[int,typer.Option()]=20260621,device:Annotated[str,typer.Option()]="cpu",)->None:
     parsed_budgets=tuple(int(value)for value in budgets.split(",")if value.strip())
     parsed_policies=tuple(value.strip()for value in query_policies.split(",")if value.strip())
     parsed_splits=tuple(Split(value.strip())for value in splits.split(",")if value.strip())
     rows=evaluatepropertyclassifier(manifest_path=manifest,traces_directory=traces,checkpoint_directory=checkpoint,output_path=output,query_budgets=parsed_budgets,query_policies=parsed_policies,splits=parsed_splits,tier=tier,run_id=run_id,replicate=replicate,seed=seed,device=device,)
-    typer.echo(f"wrote {len(rows)} property result rows to {output}")
+    typer.echo(str(output))
 @stats_app.command("power")
 def power(effect:Annotated[float,typer.Option(help="Standardized paired effect size.")],icc:Annotated[float,typer.Option()]=0.5,checkpoints:Annotated[int,typer.Option()]=1,lineages:Annotated[int,typer.Option()]=80,simulations:Annotated[int,typer.Option()]=5_000,)->None:
     result=simulateclusteredpower(lineages=lineages,checkpoints_per_lineage=checkpoints,standardized_effect=effect,intraclass_correlation=icc,simulations=simulations,)
